@@ -2,29 +2,31 @@
 
 ## Overview
 
-This project is a blockchain-based pharmaceutical supply chain application built for **CSE 540: Engineering Blockchain Applications**. The goal is to improve transparency, traceability, and authenticity verification for drug batches as they move across stakeholders.
+This is a blockchain-based pharmaceutical supply chain application built for **CSE 540: Engineering Blockchain Applications**. The objective is to improve transparency, traceability, and the verification of authenticity for drug batches as they move across stakeholders. This has been a noted issue with the amount of drugs in the market, and the lack of transparency opens the way for unchecked audltry. This is our attempt at answering that problem.
 
 The system uses Ethereum smart contracts to record traceability data on-chain, while documents are stored off-chain using IPFS.
 
 ## Problem Statement
 
-Pharmaceutical supply chains suffer from:
+The issues that modern pharmaceutical supply chains suffer from are listed:
 
 * counterfeit drugs
 * tampering and diversion
 * fragmented systems
 * lack of trust and traceability
 
-This system provides a secure and verifiable way to track drug batches.
+This system provides a secure and verifiable way to track drug batches, plausibly reducing or solving these issues.
 
 ## Features
 
-* Register drug batches
-* Transfer ownership across stakeholders
-* Verify authenticity at pharmacy level
-* Maintain immutable audit trail
-* Store documents using IPFS
-* Role-based access control
+Our project uses blockchain to address these issues. These features are most noticeable when blockchain is implemented:
+
+* Register drug batches, ensuring authenticity
+* Transfer ownership across stakeholders, enabling transparency 
+* Verify authenticity at the pharmacy level, allowing traceability
+* Maintain an immutable audit trail to prevent tampering
+* Store documents using IPFS for archiving 
+* Role-based access control as added security 
 
 
 ## Tech Stack
