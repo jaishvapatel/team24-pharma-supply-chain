@@ -6,8 +6,6 @@ This project is a blockchain-based pharmaceutical supply chain application built
 
 The system uses Ethereum smart contracts to record traceability data on-chain, while documents are stored off-chain using IPFS.
 
----
-
 ## Problem Statement
 
 Pharmaceutical supply chains suffer from:
@@ -19,8 +17,6 @@ Pharmaceutical supply chains suffer from:
 
 This system provides a secure and verifiable way to track drug batches.
 
----
-
 ## Features
 
 * Register drug batches
@@ -30,7 +26,6 @@ This system provides a secure and verifiable way to track drug batches.
 * Store documents using IPFS
 * Role-based access control
 
----
 
 ## Tech Stack
 
@@ -52,7 +47,6 @@ This system provides a secure and verifiable way to track drug batches.
 ### Networking
 - **Sepolia Test Network:** Enables cost-effective testing and deployment without real ETH usage.
 
----
 
 ## Repository Structure
 
@@ -70,8 +64,6 @@ pharma-supply-chain/
 └── .gitignore
 ```
 
----
-
 ## Smart Contract Overview
 
 The smart contract is the core component of the system, responsible for enforcing business logic, managing ownership, and ensuring data integrity across the pharmaceutical supply chain.
@@ -87,7 +79,6 @@ Each participant is assigned a role that determines their permissions:
 
 Access control is enforced using role mappings and modifiers to restrict function execution.
 
----
 
 ### Data Structures
 
@@ -107,7 +98,6 @@ Maintains an immutable log of ownership changes:
 - Timestamp
 - Optional transfer notes
 
----
 
 ### Core Functionalities
 
@@ -123,7 +113,6 @@ Maintains an immutable log of ownership changes:
 - **Audit Trail Retrieval:**  
   Users can query full batch history for transparency and traceability.
 
----
 
 ### Event Logging
 
@@ -133,8 +122,6 @@ Smart contracts emit events for all critical actions:
 - Verification
 
 These events provide a transparent and immutable audit trail that can be accessed by the frontend.
-
----
 
 ## Setup Instructions
 
@@ -156,15 +143,11 @@ npx hardhat compile
 npx hardhat test
 ```
 
----
-
 ## Deployment
 
 ```bash
 npx hardhat run scripts/deploy.js --network sepolia
 ```
-
----
 
 ## Frontend Setup
 
@@ -174,7 +157,6 @@ npm install
 npm start
 ```
 
----
 
 ## Usage Flow
 
@@ -183,7 +165,6 @@ npm start
 3. Pharmacy verifies batch
 4. Consumer checks batch via QR or ID
 
----
 
 ## Security Considerations
 
@@ -223,7 +204,6 @@ npm start
 - No integration with external systems (ERP/IoT)
 - Future work could include zero-knowledge proofs or enhanced identity verification
 
----
 
 ## Project Scope
 
@@ -233,7 +213,6 @@ This is a Minimum Viable Product (MVP) focusing on:
 * ownership transfer
 * verification
 
----
 
 ## Team Members
 
@@ -243,7 +222,6 @@ This is a Minimum Viable Product (MVP) focusing on:
 * Sri Ram Charan Penmatcha
 * Jaishva Baijubhai Patel
 
----
 
 ## License
 
