@@ -10,8 +10,6 @@ pragma solidity ^0.8.20;
  */
 contract PharmaceuticalSupplyChain {
 
-    // ─── ENUMS ───────────────────────────────────────────────────────────────
-
     /**
      * @dev Defines the roles available to participants in the supply chain.
      *      Each address is assigned exactly one role via assignRole().
@@ -37,8 +35,6 @@ contract PharmaceuticalSupplyChain {
         Flagged
     }
 
-    // ─── STRUCTS ─────────────────────────────────────────────────────────────
-
     /**
      * @dev Stores all on-chain metadata for a registered drug batch.
      *      Off-chain documents (e.g., certificates) are referenced via ipfsHash.
@@ -63,7 +59,6 @@ contract PharmaceuticalSupplyChain {
         string note;         // Optional note (e.g., shipment ID, location)
     }
 
-    // ─── STATE VARIABLES ─────────────────────────────────────────────────────
 
     /// @dev Contract deployer — has admin privileges to assign roles
     address public admin;
@@ -76,8 +71,6 @@ contract PharmaceuticalSupplyChain {
 
     /// @dev Maps each batchId to its full transfer history
     mapping(string => TransferRecord[]) public transferHistory;
-
-    // ─── EVENTS ──────────────────────────────────────────────────────────────
 
     /// @dev Emitted when a new drug batch is registered on-chain
     event BatchRegistered(string batchId, string drugName, address manufacturer, uint256 timestamp);
@@ -93,8 +86,6 @@ contract PharmaceuticalSupplyChain {
 
     /// @dev Emitted when a role is assigned to an address
     event RoleAssigned(address account, Role role);
-
-    // ─── MODIFIERS ───────────────────────────────────────────────────────────
 
     /// @dev Restricts function access to the contract admin only
     modifier onlyAdmin() {
@@ -120,8 +111,6 @@ contract PharmaceuticalSupplyChain {
         _;
     }
 
-    // ─── CONSTRUCTOR ─────────────────────────────────────────────────────────
-
     /**
      * @dev Sets the deploying address as the admin.
      */
@@ -129,7 +118,6 @@ contract PharmaceuticalSupplyChain {
         admin = msg.sender;
     }
 
-    // ─── ROLE MANAGEMENT ─────────────────────────────────────────────────────
 
     /**
      * @dev Assigns a role to a supply chain participant.
@@ -150,14 +138,13 @@ contract PharmaceuticalSupplyChain {
         return roles[_account];
     }
 
-    // ─── BATCH MANAGEMENT ────────────────────────────────────────────────────
 
     /**
      * @dev Registers a new drug batch on the blockchain.
      *      Only callable by an address with the Manufacturer role.
      * @param _batchId Unique identifier for the batch
      * @param _drugName Name of the drug
-     * @param _manufactureDate Unix timestamp of manufacture date
+     * @param _manufactureDate Unix timestamp of the manufacture date
      * @param _expiryDate Unix timestamp of expiry date
      * @param _ipfsHash IPFS hash for off-chain documents (e.g., certificates)
      */
@@ -243,8 +230,6 @@ contract PharmaceuticalSupplyChain {
         batches[_batchId].status = BatchStatus.Flagged;
         emit BatchFlagged(_batchId, msg.sender, _reason, block.timestamp);
     }
-
-    // ─── READ FUNCTIONS ───────────────────────────────────────────────────────
 
     /**
      * @dev Returns the full details of a drug batch.
