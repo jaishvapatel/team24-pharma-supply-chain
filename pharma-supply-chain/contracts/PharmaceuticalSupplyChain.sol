@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 /**
+ * "@dev" is the dev notes meant for communication between the team
  * @title PharmaceuticalSupplyChain
  * @dev Blockchain-based provenance tracking system for pharmaceutical products.
  *      Records drug batch registration, custody transfers, and verification
@@ -11,8 +12,9 @@ pragma solidity ^0.8.20;
 contract PharmaceuticalSupplyChain {
 
     /**
-     * @dev Defines the roles available to participants in the supply chain.
-     *      Each address is assigned exactly one role via assignRole().
+     * We are creating enum blocks to hold data variables and roles
+     * @dev Defines the roles available to participants within the supply chain.
+     *      Each address is assigned exactly one role via the function "assignRole()".
      */
     enum Role {
         None,
@@ -25,7 +27,7 @@ contract PharmaceuticalSupplyChain {
 
     /**
      * @dev Tracks the current status of a drug batch as it moves
-     *      through the supply chain lifecycle.
+     *      through the supply chain cycle.
      */
     enum BatchStatus {
         Registered,
@@ -36,6 +38,7 @@ contract PharmaceuticalSupplyChain {
     }
 
     /**
+     * Creating struct blocks to hold archivable entries 
      * @dev Stores all on-chain metadata for a registered drug batch.
      *      Off-chain documents (e.g., certificates) are referenced via ipfsHash.
      */
@@ -50,23 +53,23 @@ contract PharmaceuticalSupplyChain {
     }
 
     /**
-     * @dev Records a single custody transfer event for audit trail purposes.
+     * @dev Records a single custody transfer event (or delivery) for audit trail (tracking delivery) purposes.
      */
     struct TransferRecord {
-        address from;        // Previous custodian
-        address to;          // New custodian
+        address from;        // Previous custodian/holder
+        address to;          // New custodian/holder
         uint256 timestamp;   // When the transfer occurred
-        string note;         // Optional note (e.g., shipment ID, location)
+        string note;         // Optional note 
     }
 
 
-    /// @dev Contract deployer — has admin privileges to assign roles
+    /// @dev Contract deployer has admin privileges to assign roles
     address public admin;
 
     /// @dev Maps each address to its assigned role
     mapping(address => Role) public roles;
 
-    /// @dev Maps each batchId to its DrugBatch struct
+    /// @dev Maps each batchId to its "DrugBatch" struct
     mapping(string => DrugBatch) public batches;
 
     /// @dev Maps each batchId to its full transfer history
@@ -141,7 +144,7 @@ contract PharmaceuticalSupplyChain {
 
     /**
      * @dev Registers a new drug batch on the blockchain.
-     *      Only callable by an address with the Manufacturer role.
+     *      Only callable by an address with the "Manufacturer" role.
      * @param _batchId Unique identifier for the batch
      * @param _drugName Name of the drug
      * @param _manufactureDate Unix timestamp of the manufacture date
@@ -175,7 +178,7 @@ contract PharmaceuticalSupplyChain {
      *      Only callable by the current owner of the batch.
      * @param _batchId ID of the batch to transfer
      * @param _to Address of the new custodian
-     * @param _note Optional note describing the transfer (e.g., shipment ID)
+     * @param _note Optional note describing the transfer 
      */
     function transferOwnership(
         string memory _batchId,
@@ -200,8 +203,8 @@ contract PharmaceuticalSupplyChain {
     }
 
     /**
-     * @dev Marks a batch as verified after authenticity check.
-     *      Only callable by an address with the Pharmacy role.
+     * @dev Marks a batch as verified after an authenticity check.
+     *      Only callable by an address with the "Pharmacy" role.
      * @param _batchId ID of the batch to verify
      */
     function verifyBatch(string memory _batchId)
@@ -225,7 +228,7 @@ contract PharmaceuticalSupplyChain {
     {
         require(
             roles[msg.sender] == Role.Regulator || roles[msg.sender] == Role.Pharmacy,
-            "Access denied: only Regulator or Pharmacy can flag"
+            "Access denied: only Regulator or Pharmacy can flag."
         );
         batches[_batchId].status = BatchStatus.Flagged;
         emit BatchFlagged(_batchId, msg.sender, _reason, block.timestamp);
