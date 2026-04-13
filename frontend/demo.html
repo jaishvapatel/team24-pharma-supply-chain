@@ -3,551 +3,297 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PharmaSC Demo — Team 24</title>
+  <title>PharmaSC — Team 24 Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #22263a;
-      --border: #2e3348;
-      --text: #e4e6ef;
-      --text-dim: #8b8fa3;
-      --accent: #6c63ff;
-      --accent-glow: rgba(108, 99, 255, 0.15);
-      --green: #34d399;
-      --green-bg: rgba(52, 211, 153, 0.1);
-      --orange: #fb923c;
-      --orange-bg: rgba(251, 146, 60, 0.1);
-      --red: #f87171;
-      --red-bg: rgba(248, 113, 113, 0.1);
-      --blue: #60a5fa;
-      --blue-bg: rgba(96, 165, 250, 0.1);
-      --font: 'Segoe UI', system-ui, sans-serif;
-      --mono: 'SF Mono', 'Consolas', 'Courier New', monospace;
+      --bg: #f0f7f4;
+      --bg-glass: rgba(255,255,255,0.72);
+      --surface: #ffffff;
+      --surface-hover: #f8fcfa;
+      --border: #d4e4dc;
+      --border-light: #e8f0ec;
+      --text: #1a2e28;
+      --text-secondary: #5a7a6e;
+      --text-dim: #8aa89a;
+      --teal: #0d9373;
+      --teal-light: #e6f5f0;
+      --teal-glow: rgba(13,147,115,0.08);
+      --mint: #34d399;
+      --mint-bg: rgba(52,211,153,0.1);
+      --sky: #38bdf8;
+      --sky-bg: rgba(56,189,248,0.08);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245,158,11,0.08);
+      --rose: #f43f5e;
+      --rose-bg: rgba(244,63,94,0.06);
+      --shadow-sm: 0 1px 3px rgba(26,46,40,0.06);
+      --shadow-md: 0 4px 16px rgba(26,46,40,0.08);
+      --radius: 14px;
     }
-
     body {
-      font-family: var(--font);
+      font-family: 'DM Sans', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 600px 400px at 10% 20%, rgba(13,147,115,0.04) 0%, transparent 70%),
+        radial-gradient(ellipse 500px 500px at 90% 80%, rgba(56,189,248,0.04) 0%, transparent 70%);
     }
-
     header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 20px 32px;
+      backdrop-filter: blur(20px);
+      background: var(--bg-glass);
+      border-bottom: 1px solid var(--border-light);
+      padding: 18px 36px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    header h1 {
-      font-size: 20px;
-      font-weight: 600;
-    }
-    header h1 span { color: var(--accent); }
-    header .meta {
-      font-size: 13px;
-      color: var(--text-dim);
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px;
-    }
-
-    /* Pipeline visualization */
-    .pipeline {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      margin: 24px 0 40px;
-      flex-wrap: wrap;
-    }
-    .stage {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      padding: 16px 20px;
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--teal), var(--mint));
       border-radius: 10px;
-      min-width: 130px;
-      transition: all 0.4s ease;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 14px;
     }
-    .stage.active {
-      background: var(--accent-glow);
-      box-shadow: 0 0 20px rgba(108, 99, 255, 0.2);
+    .logo h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .logo h1 span { color: var(--teal); }
+    .header-meta {
+      font-size: 12px; color: var(--text-dim); font-weight: 500;
+      background: var(--teal-light); padding: 6px 14px; border-radius: 20px;
     }
-    .stage.done {
-      background: var(--green-bg);
+    .container { max-width: 1140px; margin: 0 auto; padding: 32px 28px; }
+    .pipeline-wrapper {
+      background: var(--surface); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 28px 24px; margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
     }
+    .pipeline-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 20px;
+    }
+    .pipeline { display: flex; align-items: center; justify-content: center; }
+    .stage {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding: 14px 24px; border-radius: 12px; min-width: 120px;
+      transition: all 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    .stage.active { background: var(--teal-glow); transform: translateY(-2px); }
+    .stage.done { background: var(--mint-bg); }
     .stage .icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      background: var(--surface2);
-      border: 2px solid var(--border);
-      transition: all 0.4s ease;
+      width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; background: var(--bg);
+      border: 2px solid var(--border); color: var(--text-dim);
+      transition: all 0.5s cubic-bezier(0.4,0,0.2,1);
     }
-    .stage.active .icon { border-color: var(--accent); background: var(--accent); color: #fff; }
-    .stage.done .icon { border-color: var(--green); background: var(--green); color: #fff; }
-    .stage .label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); }
-    .stage.active .label { color: var(--accent); }
-    .stage.done .label { color: var(--green); }
-
-    .arrow {
-      font-size: 20px;
-      color: var(--border);
-      transition: color 0.4s ease;
+    .stage.active .icon {
+      border-color: var(--teal); background: var(--teal); color: #fff;
+      box-shadow: 0 4px 14px rgba(13,147,115,0.3);
     }
-    .arrow.done { color: var(--green); }
-
-    /* Log console */
-    .console-panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 24px;
+    .stage.done .icon {
+      border-color: var(--mint); background: var(--mint); color: #fff;
+      box-shadow: 0 4px 14px rgba(52,211,153,0.25);
     }
-    .console-header {
-      background: var(--surface2);
-      padding: 12px 20px;
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid var(--border);
+    .stage .label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--text-dim);
     }
-    .console-header .dot { width: 8px; height: 8px; border-radius: 50%; }
-    .console-body {
-      padding: 16px 20px;
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.8;
-      max-height: 420px;
-      overflow-y: auto;
-    }
-    .log-line {
-      opacity: 0;
-      animation: fadeIn 0.3s ease forwards;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .log-line .timestamp { color: var(--text-dim); }
-    .log-line .tag {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      margin: 0 4px;
-    }
-    .tag-deploy { background: var(--blue-bg); color: var(--blue); }
-    .tag-role   { background: var(--accent-glow); color: var(--accent); }
-    .tag-batch  { background: var(--green-bg); color: var(--green); }
-    .tag-transfer { background: var(--orange-bg); color: var(--orange); }
-    .tag-verify { background: var(--green-bg); color: var(--green); }
-    .tag-flag   { background: var(--red-bg); color: var(--red); }
-    .tag-info   { background: var(--surface2); color: var(--text-dim); }
-
-    .log-line .addr {
-      color: var(--blue);
-      font-size: 12px;
-    }
-
-    /* Controls */
-    .controls {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
+    .stage.active .label { color: var(--teal); }
+    .stage.done .label { color: #059669; }
+    .arrow { font-size: 18px; color: var(--border); transition: color 0.5s ease; padding: 0 4px; }
+    .arrow.done { color: var(--mint); }
+    .controls { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
     .btn {
-      padding: 10px 20px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      border-radius: 8px;
-      font-family: var(--font);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
+      padding: 9px 16px; border: 1.5px solid var(--border); background: var(--surface);
+      color: var(--text); border-radius: 10px; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.25s ease; box-shadow: var(--shadow-sm);
     }
     .btn:hover:not(:disabled) {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
+      border-color: var(--teal); color: var(--teal); background: var(--teal-light);
+      transform: translateY(-1px); box-shadow: var(--shadow-md);
     }
-    .btn:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
     .btn-primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
+      background: linear-gradient(135deg, var(--teal), #0aa87e);
+      border-color: transparent; color: #fff;
     }
     .btn-primary:hover:not(:disabled) {
-      background: #5a52e0;
+      background: linear-gradient(135deg, #0b836a, var(--teal));
+      color: #fff; border-color: transparent;
     }
-    .btn-danger {
-      border-color: var(--red);
-      color: var(--red);
+    .btn-danger { border-color: var(--rose); color: var(--rose); }
+    .btn-danger:hover:not(:disabled) { background: var(--rose); color: #fff; border-color: var(--rose); }
+    .card {
+      background: var(--surface); border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+      box-shadow: var(--shadow-sm); animation: slideUp 0.4s ease-out;
     }
-    .btn-danger:hover:not(:disabled) {
-      background: var(--red);
-      color: #fff;
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-
-    /* Batch info card */
-    .batch-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
+    .card h3 {
+      font-size: 14px; font-weight: 700; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px;
     }
-    .batch-card h3 {
-      font-size: 16px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 12px;
-    }
+    .card h3 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
     .info-item {
-      background: var(--surface2);
-      border-radius: 8px;
-      padding: 12px 16px;
+      background: var(--bg); border-radius: 10px; padding: 14px 16px;
+      border: 1px solid var(--border-light);
     }
-    .info-item .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .info-item .value { font-size: 14px; font-weight: 500; }
-
+    .info-item .lbl {
+      font-size: 10px; font-weight: 600; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px;
+    }
+    .info-item .val { font-size: 14px; font-weight: 600; }
     .status-badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
+      display: inline-block; padding: 4px 12px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
     }
-    .status-registered { background: var(--blue-bg); color: var(--blue); }
-    .status-intransit  { background: var(--orange-bg); color: var(--orange); }
-    .status-received   { background: var(--accent-glow); color: var(--accent); }
-    .status-verified   { background: var(--green-bg); color: var(--green); }
-    .status-flagged    { background: var(--red-bg); color: var(--red); }
-
-    /* History table */
-    .history-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-    }
+    .status-registered { background: var(--sky-bg); color: var(--sky); }
+    .status-intransit  { background: var(--amber-bg); color: var(--amber); }
+    .status-received   { background: var(--teal-light); color: var(--teal); }
+    .status-verified   { background: var(--mint-bg); color: #059669; }
+    .status-flagged    { background: var(--rose-bg); color: var(--rose); }
+    .history-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
     .history-table th {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-dim);
-      padding: 8px 12px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-dim); font-weight: 600; padding: 10px 14px;
+      text-align: left; border-bottom: 1.5px solid var(--border);
     }
     .history-table td {
-      padding: 10px 12px;
-      font-size: 13px;
-      border-bottom: 1px solid var(--border);
+      padding: 12px 14px; font-size: 13px;
+      border-bottom: 1px solid var(--border-light);
     }
     .history-table tr:last-child td { border-bottom: none; }
+    .history-table tr:hover td { background: var(--surface-hover); }
+    .console-panel {
+      background: var(--surface); border: 1px solid var(--border-light);
+      border-radius: var(--radius); overflow: hidden; margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .console-header {
+      background: var(--bg); padding: 12px 20px; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border-light); color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.8px;
+    }
+    .console-header .dots { display: flex; gap: 5px; }
+    .console-header .dots span { width: 10px; height: 10px; border-radius: 50%; }
+    .console-body {
+      padding: 18px 20px; font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px; line-height: 2; max-height: 380px;
+      overflow-y: auto; background: #fafdf9;
+    }
+    .log-line { opacity: 0; animation: fadeIn 0.3s ease forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-6px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .log-line .ts { color: var(--text-dim); font-size: 11px; }
+    .log-line .tag {
+      display: inline-block; padding: 2px 8px; border-radius: 6px;
+      font-size: 10px; font-weight: 700; margin: 0 6px;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .tag-deploy   { background: var(--sky-bg); color: var(--sky); }
+    .tag-role     { background: var(--teal-light); color: var(--teal); }
+    .tag-batch    { background: var(--mint-bg); color: #059669; }
+    .tag-transfer { background: var(--amber-bg); color: #d97706; }
+    .tag-verify   { background: var(--mint-bg); color: #059669; }
+    .tag-flag     { background: var(--rose-bg); color: var(--rose); }
+    .tag-info     { background: var(--bg); color: var(--text-dim); }
+    .log-line .addr { color: var(--teal); font-size: 11.5px; }
+    .footer { text-align: center; padding: 24px; font-size: 12px; color: var(--text-dim); }
   </style>
 </head>
 <body>
   <header>
-    <h1><span>PharmaSC</span> — Pharmaceutical Supply Chain Demo</h1>
-    <div class="meta">Team 24 | CSE 540 | Spring B 2026</div>
+    <div class="logo">
+      <div class="logo-icon">SC</div>
+      <h1><span>Pharma</span>SC Demo</h1>
+    </div>
+    <div class="header-meta">Team 24 &middot; CSE 540 &middot; Spring B 2026</div>
   </header>
-
   <div class="container">
-
-    <!-- Pipeline -->
-    <div class="pipeline" id="pipeline">
-      <div class="stage" id="s-mfg">
-        <div class="icon">M</div>
-        <div class="label">Manufacturer</div>
-      </div>
-      <div class="arrow" id="a1">→</div>
-      <div class="stage" id="s-dist">
-        <div class="icon">D</div>
-        <div class="label">Distributor</div>
-      </div>
-      <div class="arrow" id="a2">→</div>
-      <div class="stage" id="s-pharm">
-        <div class="icon">P</div>
-        <div class="label">Pharmacy</div>
-      </div>
-      <div class="arrow" id="a3">→</div>
-      <div class="stage" id="s-verify">
-        <div class="icon">✓</div>
-        <div class="label">Verified</div>
+    <div class="pipeline-wrapper">
+      <div class="pipeline-label">Supply Chain Progress</div>
+      <div class="pipeline">
+        <div class="stage" id="s-mfg"><div class="icon">M</div><div class="label">Manufacturer</div></div>
+        <div class="arrow" id="a1">&rarr;</div>
+        <div class="stage" id="s-dist"><div class="icon">D</div><div class="label">Distributor</div></div>
+        <div class="arrow" id="a2">&rarr;</div>
+        <div class="stage" id="s-pharm"><div class="icon">P</div><div class="label">Pharmacy</div></div>
+        <div class="arrow" id="a3">&rarr;</div>
+        <div class="stage" id="s-verify"><div class="icon">&check;</div><div class="label">Verified</div></div>
       </div>
     </div>
-
-    <!-- Controls -->
     <div class="controls">
       <button class="btn btn-primary" id="btn-deploy" onclick="step_deploy()">1. Deploy Contract</button>
       <button class="btn" id="btn-roles" onclick="step_roles()" disabled>2. Assign Roles</button>
       <button class="btn" id="btn-register" onclick="step_register()" disabled>3. Register Batch</button>
-      <button class="btn" id="btn-transfer1" onclick="step_transfer1()" disabled>4. Transfer → Distributor</button>
+      <button class="btn" id="btn-transfer1" onclick="step_transfer1()" disabled>4. Transfer &rarr; Distributor</button>
       <button class="btn" id="btn-receive1" onclick="step_receive1()" disabled>5. Distributor Receives</button>
-      <button class="btn" id="btn-transfer2" onclick="step_transfer2()" disabled>6. Transfer → Pharmacy</button>
+      <button class="btn" id="btn-transfer2" onclick="step_transfer2()" disabled>6. Transfer &rarr; Pharmacy</button>
       <button class="btn" id="btn-receive2" onclick="step_receive2()" disabled>7. Pharmacy Receives</button>
       <button class="btn" id="btn-verify" onclick="step_verify()" disabled>8. Verify Batch</button>
-      <button class="btn btn-danger" id="btn-flag" onclick="step_flag()" disabled>9. Flag Batch (Regulator)</button>
-      <button class="btn" id="btn-history" onclick="step_history()" disabled>10. View History</button>
+      <button class="btn btn-danger" id="btn-flag" onclick="step_flag()" disabled>9. Flag Batch</button>
+      <button class="btn" id="btn-history" onclick="step_history()" disabled>10. Audit Trail</button>
     </div>
-
-    <!-- Batch info card -->
-    <div class="batch-card" id="batch-card" style="display: none;">
-      <h3>Current Batch State</h3>
+    <div class="card" id="batch-card" style="display:none;">
+      <h3><span class="dot"></span> Current Batch State</h3>
       <div class="info-grid" id="batch-info"></div>
     </div>
-
-    <!-- History -->
-    <div class="batch-card" id="history-card" style="display: none;">
-      <h3>Chain-of-Custody Audit Trail</h3>
+    <div class="card" id="history-card" style="display:none;">
+      <h3><span class="dot"></span> Chain-of-Custody Audit Trail</h3>
       <table class="history-table">
         <thead><tr><th>#</th><th>From</th><th>To</th><th>Timestamp</th><th>Note</th></tr></thead>
         <tbody id="history-body"></tbody>
       </table>
     </div>
-
-    <!-- Console -->
     <div class="console-panel">
       <div class="console-header">
-        <div class="dot" style="background: var(--red)"></div>
-        <div class="dot" style="background: var(--orange)"></div>
-        <div class="dot" style="background: var(--green)"></div>
+        <div class="dots">
+          <span style="background:var(--rose)"></span>
+          <span style="background:var(--amber)"></span>
+          <span style="background:var(--mint)"></span>
+        </div>
         Transaction Log
       </div>
       <div class="console-body" id="console"></div>
     </div>
-
+    <div class="footer">Pharmaceutical Supply Chain Traceability System &middot; Ethereum / Solidity &middot; Team 24</div>
   </div>
-
   <script>
-    // Simulated wallet addresses
-    const ADDR = {
-      admin:        "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-      manufacturer: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-      distributor:  "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      pharmacy:     "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      regulator:    "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
-      consumer:     "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
-    };
-
-    const CONTRACT_ADDR = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-
-    // State
-    let batch = null;
-    let transfers = [];
-    let logIndex = 0;
-
-    function short(addr) { return addr.slice(0, 6) + "..." + addr.slice(-4); }
-    function now() { return new Date().toLocaleTimeString(); }
-
-    function log(tag, tagClass, msg) {
-      const el = document.getElementById("console");
-      const line = document.createElement("div");
-      line.className = "log-line";
-      line.style.animationDelay = "0s";
-      line.innerHTML = `<span class="timestamp">[${now()}]</span> <span class="tag ${tagClass}">${tag}</span> ${msg}`;
-      el.appendChild(line);
-      el.scrollTop = el.scrollHeight;
-    }
-
-    function updateBatchCard() {
-      if (!batch) return;
-      const card = document.getElementById("batch-card");
-      card.style.display = "block";
-
-      const statusMap = {
-        "Registered": "status-registered",
-        "InTransit":  "status-intransit",
-        "Received":   "status-received",
-        "Verified":   "status-verified",
-        "Flagged":    "status-flagged",
-      };
-
-      document.getElementById("batch-info").innerHTML = `
-        <div class="info-item"><div class="label">Batch ID</div><div class="value">${batch.id}</div></div>
-        <div class="info-item"><div class="label">Drug Name</div><div class="value">${batch.drug}</div></div>
-        <div class="info-item"><div class="label">Current Owner</div><div class="value"><span class="addr">${short(batch.owner)}</span> (${batch.ownerRole})</div></div>
-        <div class="info-item"><div class="label">Status</div><div class="value"><span class="status-badge ${statusMap[batch.status]}">${batch.status}</span></div></div>
-        <div class="info-item"><div class="label">Manufacture Date</div><div class="value">${batch.mfgDate}</div></div>
-        <div class="info-item"><div class="label">Expiry Date</div><div class="value">${batch.expDate}</div></div>
-        <div class="info-item"><div class="label">IPFS Hash</div><div class="value" style="font-size:11px;word-break:break-all;">${batch.ipfs}</div></div>
-      `;
-    }
-
-    function enableBtn(id) { document.getElementById(id).disabled = false; }
-    function disableBtn(id) { document.getElementById(id).disabled = true; }
-
-    function setStage(id, state) {
-      const el = document.getElementById(id);
-      el.classList.remove("active", "done");
-      if (state) el.classList.add(state);
-    }
-    function setArrow(id, done) {
-      const el = document.getElementById(id);
-      el.classList.toggle("done", done);
-    }
-
-    // ── Steps ──────────────────────────────────────────────────
-
-    function step_deploy() {
-      log("DEPLOY", "tag-deploy", `Contract deployed at <span class="addr">${short(CONTRACT_ADDR)}</span>`);
-      log("DEPLOY", "tag-deploy", `Admin set to <span class="addr">${short(ADDR.admin)}</span>`);
-      disableBtn("btn-deploy");
-      enableBtn("btn-roles");
-    }
-
-    function step_roles() {
-      log("ROLE", "tag-role", `Assigned <b>Manufacturer</b> → <span class="addr">${short(ADDR.manufacturer)}</span>`);
-      log("ROLE", "tag-role", `Assigned <b>Distributor</b> → <span class="addr">${short(ADDR.distributor)}</span>`);
-      log("ROLE", "tag-role", `Assigned <b>Pharmacy</b> → <span class="addr">${short(ADDR.pharmacy)}</span>`);
-      log("ROLE", "tag-role", `Assigned <b>Regulator</b> → <span class="addr">${short(ADDR.regulator)}</span>`);
-      log("ROLE", "tag-role", `Assigned <b>Consumer</b> → <span class="addr">${short(ADDR.consumer)}</span>`);
-      disableBtn("btn-roles");
-      enableBtn("btn-register");
-    }
-
-    function step_register() {
-      batch = {
-        id: "BATCH-2026-001",
-        drug: "Amoxicillin 500mg",
-        owner: ADDR.manufacturer,
-        ownerRole: "Manufacturer",
-        status: "Registered",
-        mfgDate: "2026-04-11",
-        expDate: "2027-04-11",
-        ipfs: "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-      };
-      log("BATCH", "tag-batch", `Registered <b>${batch.id}</b> — ${batch.drug}`);
-      log("INFO", "tag-info", `IPFS documents hash: ${batch.ipfs}`);
-      setStage("s-mfg", "active");
-      updateBatchCard();
-      disableBtn("btn-register");
-      enableBtn("btn-transfer1");
-    }
-
-    function step_transfer1() {
-      transfers.push({ from: batch.owner, fromRole: "Manufacturer", to: ADDR.distributor, toRole: "Distributor", note: "Shipment #SHP-001 via FedEx", time: now() });
-      batch.owner = ADDR.distributor;
-      batch.ownerRole = "Distributor";
-      batch.status = "InTransit";
-      log("TRANSFER", "tag-transfer", `${batch.id}: Manufacturer → Distributor | Note: Shipment #SHP-001`);
-      log("EVENT", "tag-info", `OwnershipTransferred emitted`);
-      setStage("s-mfg", "done");
-      setArrow("a1", true);
-      setStage("s-dist", "active");
-      updateBatchCard();
-      disableBtn("btn-transfer1");
-      enableBtn("btn-receive1");
-    }
-
-    function step_receive1() {
-      batch.status = "Received";
-      log("RECEIVE", "tag-batch", `Distributor confirmed receipt of ${batch.id}`);
-      log("EVENT", "tag-info", `BatchReceived emitted`);
-      updateBatchCard();
-      disableBtn("btn-receive1");
-      enableBtn("btn-transfer2");
-    }
-
-    function step_transfer2() {
-      transfers.push({ from: batch.owner, fromRole: "Distributor", to: ADDR.pharmacy, toRole: "Pharmacy", note: "Local delivery #DEL-045", time: now() });
-      batch.owner = ADDR.pharmacy;
-      batch.ownerRole = "Pharmacy";
-      batch.status = "InTransit";
-      log("TRANSFER", "tag-transfer", `${batch.id}: Distributor → Pharmacy | Note: Local delivery #DEL-045`);
-      log("EVENT", "tag-info", `OwnershipTransferred emitted`);
-      setStage("s-dist", "done");
-      setArrow("a2", true);
-      setStage("s-pharm", "active");
-      updateBatchCard();
-      disableBtn("btn-transfer2");
-      enableBtn("btn-receive2");
-    }
-
-    function step_receive2() {
-      batch.status = "Received";
-      log("RECEIVE", "tag-batch", `Pharmacy confirmed receipt of ${batch.id}`);
-      log("EVENT", "tag-info", `BatchReceived emitted`);
-      updateBatchCard();
-      disableBtn("btn-receive2");
-      enableBtn("btn-verify");
-      enableBtn("btn-flag");
-    }
-
-    function step_verify() {
-      batch.status = "Verified";
-      log("VERIFY", "tag-verify", `✓ ${batch.id} verified as <b>AUTHENTIC</b> by Pharmacy`);
-      log("EVENT", "tag-info", `BatchVerified emitted`);
-      setStage("s-pharm", "done");
-      setArrow("a3", true);
-      setStage("s-verify", "done");
-      updateBatchCard();
-      disableBtn("btn-verify");
-      disableBtn("btn-flag");
-      enableBtn("btn-history");
-    }
-
-    function step_flag() {
-      batch.status = "Flagged";
-      log("FLAG", "tag-flag", `⚠ ${batch.id} FLAGGED by Regulator — Temperature anomaly detected`);
-      log("EVENT", "tag-info", `BatchFlagged emitted`);
-      setStage("s-pharm", "");
-      setStage("s-verify", "");
-      updateBatchCard();
-      disableBtn("btn-verify");
-      disableBtn("btn-flag");
-      enableBtn("btn-history");
-    }
-
-    function step_history() {
-      const card = document.getElementById("history-card");
-      card.style.display = "block";
-      const tbody = document.getElementById("history-body");
-      tbody.innerHTML = "";
-      transfers.forEach((t, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${i + 1}</td>
-          <td><span class="addr">${short(t.from)}</span> (${t.fromRole})</td>
-          <td><span class="addr">${short(t.to)}</span> (${t.toRole})</td>
-          <td>${t.time}</td>
-          <td>${t.note}</td>
-        `;
-        tbody.appendChild(row);
-      });
-      log("AUDIT", "tag-info", `Full chain-of-custody: ${transfers.length} transfers recorded`);
-      disableBtn("btn-history");
-    }
+    const ADDR={admin:"0x5FbDB2315678afecb367f032d93F642f64180aa3",manufacturer:"0x70997970C51812dc3A010C7d01b50e0d17dc79C8",distributor:"0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",pharmacy:"0x90F79bf6EB2c4f870365E785982E1f101E93b906",regulator:"0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",consumer:"0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"};
+    const CONTRACT="0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+    let batch=null,transfers=[];
+    function short(a){return a.slice(0,6)+"..."+a.slice(-4)}
+    function now(){return new Date().toLocaleTimeString()}
+    function log(tag,cls,msg){const el=document.getElementById("console");const d=document.createElement("div");d.className="log-line";d.innerHTML=`<span class="ts">[${now()}]</span> <span class="tag ${cls}">${tag}</span> ${msg}`;el.appendChild(d);el.scrollTop=el.scrollHeight}
+    function updateBatchCard(){if(!batch)return;document.getElementById("batch-card").style.display="block";const sm={"Registered":"status-registered","InTransit":"status-intransit","Received":"status-received","Verified":"status-verified","Flagged":"status-flagged"};document.getElementById("batch-info").innerHTML=`<div class="info-item"><div class="lbl">Batch ID</div><div class="val">${batch.id}</div></div><div class="info-item"><div class="lbl">Drug Name</div><div class="val">${batch.drug}</div></div><div class="info-item"><div class="lbl">Current Owner</div><div class="val"><span class="addr">${short(batch.owner)}</span> (${batch.ownerRole})</div></div><div class="info-item"><div class="lbl">Status</div><div class="val"><span class="status-badge ${sm[batch.status]}">${batch.status}</span></div></div><div class="info-item"><div class="lbl">Manufacture Date</div><div class="val">${batch.mfgDate}</div></div><div class="info-item"><div class="lbl">Expiry Date</div><div class="val">${batch.expDate}</div></div><div class="info-item"><div class="lbl">IPFS Hash</div><div class="val" style="font-size:11px;word-break:break-all;font-family:'JetBrains Mono',monospace;">${batch.ipfs}</div></div>`}
+    function enableBtn(id){document.getElementById(id).disabled=false}
+    function disableBtn(id){document.getElementById(id).disabled=true}
+    function setStage(id,s){const el=document.getElementById(id);el.classList.remove("active","done");if(s)el.classList.add(s)}
+    function setArrow(id,done){document.getElementById(id).classList.toggle("done",done)}
+    function step_deploy(){log("DEPLOY","tag-deploy",`Contract deployed at <span class="addr">${short(CONTRACT)}</span>`);log("DEPLOY","tag-deploy",`Admin set to <span class="addr">${short(ADDR.admin)}</span>`);disableBtn("btn-deploy");enableBtn("btn-roles")}
+    function step_roles(){log("ROLE","tag-role",`Assigned <b>Manufacturer</b> &rarr; <span class="addr">${short(ADDR.manufacturer)}</span>`);log("ROLE","tag-role",`Assigned <b>Distributor</b> &rarr; <span class="addr">${short(ADDR.distributor)}</span>`);log("ROLE","tag-role",`Assigned <b>Pharmacy</b> &rarr; <span class="addr">${short(ADDR.pharmacy)}</span>`);log("ROLE","tag-role",`Assigned <b>Regulator</b> &rarr; <span class="addr">${short(ADDR.regulator)}</span>`);log("ROLE","tag-role",`Assigned <b>Consumer</b> &rarr; <span class="addr">${short(ADDR.consumer)}</span>`);disableBtn("btn-roles");enableBtn("btn-register")}
+    function step_register(){batch={id:"BATCH-2026-001",drug:"Amoxicillin 500mg",owner:ADDR.manufacturer,ownerRole:"Manufacturer",status:"Registered",mfgDate:"2026-04-12",expDate:"2027-04-12",ipfs:"QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco"};log("BATCH","tag-batch",`Registered <b>${batch.id}</b> &mdash; ${batch.drug}`);log("INFO","tag-info",`IPFS documents: ${batch.ipfs}`);setStage("s-mfg","active");updateBatchCard();disableBtn("btn-register");enableBtn("btn-transfer1")}
+    function step_transfer1(){transfers.push({from:batch.owner,fromRole:"Manufacturer",to:ADDR.distributor,toRole:"Distributor",note:"Shipment #SHP-001 via FedEx",time:now()});batch.owner=ADDR.distributor;batch.ownerRole="Distributor";batch.status="InTransit";log("TRANSFER","tag-transfer",`${batch.id}: Manufacturer &rarr; Distributor | Shipment #SHP-001`);log("EVENT","tag-info","OwnershipTransferred emitted");setStage("s-mfg","done");setArrow("a1",true);setStage("s-dist","active");updateBatchCard();disableBtn("btn-transfer1");enableBtn("btn-receive1")}
+    function step_receive1(){batch.status="Received";log("RECEIVE","tag-batch",`Distributor confirmed receipt of ${batch.id}`);log("EVENT","tag-info","BatchReceived emitted");updateBatchCard();disableBtn("btn-receive1");enableBtn("btn-transfer2")}
+    function step_transfer2(){transfers.push({from:batch.owner,fromRole:"Distributor",to:ADDR.pharmacy,toRole:"Pharmacy",note:"Local delivery #DEL-045",time:now()});batch.owner=ADDR.pharmacy;batch.ownerRole="Pharmacy";batch.status="InTransit";log("TRANSFER","tag-transfer",`${batch.id}: Distributor &rarr; Pharmacy | Delivery #DEL-045`);log("EVENT","tag-info","OwnershipTransferred emitted");setStage("s-dist","done");setArrow("a2",true);setStage("s-pharm","active");updateBatchCard();disableBtn("btn-transfer2");enableBtn("btn-receive2")}
+    function step_receive2(){batch.status="Received";log("RECEIVE","tag-batch",`Pharmacy confirmed receipt of ${batch.id}`);log("EVENT","tag-info","BatchReceived emitted");updateBatchCard();disableBtn("btn-receive2");enableBtn("btn-verify");enableBtn("btn-flag")}
+    function step_verify(){batch.status="Verified";log("VERIFY","tag-verify",`${batch.id} verified as <b>AUTHENTIC</b> by Pharmacy`);log("EVENT","tag-info","BatchVerified emitted");setStage("s-pharm","done");setArrow("a3",true);setStage("s-verify","done");updateBatchCard();disableBtn("btn-verify");disableBtn("btn-flag");enableBtn("btn-history")}
+    function step_flag(){batch.status="Flagged";log("FLAG","tag-flag",`${batch.id} FLAGGED by Regulator &mdash; Temperature anomaly detected`);log("EVENT","tag-info","BatchFlagged emitted");setStage("s-pharm","");setStage("s-verify","");updateBatchCard();disableBtn("btn-verify");disableBtn("btn-flag");enableBtn("btn-history")}
+    function step_history(){const card=document.getElementById("history-card");card.style.display="block";const tbody=document.getElementById("history-body");tbody.innerHTML="";transfers.forEach((t,i)=>{const row=document.createElement("tr");row.innerHTML=`<td style="font-weight:600">${i+1}</td><td><span class="addr">${short(t.from)}</span> <span style="color:var(--text-dim)">(${t.fromRole})</span></td><td><span class="addr">${short(t.to)}</span> <span style="color:var(--text-dim)">(${t.toRole})</span></td><td>${t.time}</td><td>${t.note}</td>`;tbody.appendChild(row)});log("AUDIT","tag-info",`Full chain-of-custody: ${transfers.length} transfers recorded`);disableBtn("btn-history")}
   </script>
 </body>
 </html>
