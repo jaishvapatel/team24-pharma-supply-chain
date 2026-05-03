@@ -1,285 +1,328 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 /**
  * @title PharmaceuticalSupplyChain
- * @dev Team 24 - CSE 540
- * Extended with IPFS off-chain document storage.
- * Only IPFS CIDs are stored on-chain; full document data lives on IPFS.
+ * @dev Tracks pharmaceutical drug batches from manufacturer to consumer.
+ *      Uses role-based access control to restrict actions to authorized
+ *      supply chain participants. Each batch maintains an immutable
+ *      transfer history for full provenance auditing.
+ *
+ *      Team 24 | CSE 540 | Spring B 2026
  */
 contract PharmaceuticalSupplyChain {
 
-    // ─────────────────────────── Roles ───────────────────────────────────────
-
-    enum Role { None, Manufacturer, Distributor, Pharmacy, Regulator, Consumer }
-
-    mapping(address => Role) public roles;
-    address public owner;
-
-    // ─────────────────────────── Batch ───────────────────────────────────────
-
-    struct BatchDocument {
-        string  ipfsCID;        // IPFS Content Identifier (CIDv1 preferred)
-        string  docType;        // e.g. "lab_report", "certificate", "invoice"
-        uint256 uploadedAt;
-        address uploadedBy;
+    // ── Role definitions ─────────────────────────────────────────────
+    enum Role {
+        None,
+        Manufacturer,
+        Distributor,
+        Pharmacy,
+        Regulator,
+        Consumer
     }
 
-    struct Batch {
-        string   batchId;
-        string   drugName;
-        uint256  manufactureDate;
-        uint256  expiryDate;
-        address  currentOwner;
-        bool     isVerified;
-        bool     exists;
-
-        // IPFS – primary metadata CID (manufacturing record, COA, etc.)
-        string   metadataCID;
-
-        // Additional documents attached over the batch lifetime
-        BatchDocument[] documents;
+    // ── Batch lifecycle states ───────────────────────────────────────
+    enum BatchStatus {
+        Registered,
+        InTransit,
+        Received,
+        Verified,
+        Flagged
     }
 
-    // ─────────────────────────── History ─────────────────────────────────────
+    // ── Data structures ──────────────────────────────────────────────
 
-    struct HistoryEntry {
+    struct DrugBatch {
+        string  batchId;
+        string  drugName;
+        address currentOwner;
+        BatchStatus status;
+        uint256 manufactureDate;
+        uint256 expiryDate;
+        string  ipfsHash;         // IPFS CID pointing to supporting documents (latest)
+    }
+
+    struct TransferRecord {
         address from;
         address to;
         uint256 timestamp;
-        string  action;
-        string  ipfsCID;   // optional: shipping doc, transfer note, etc.
+        string  note;
     }
 
-    // ─────────────────────────── Storage ─────────────────────────────────────
+    // Records a single IPFS document linked to a batch.
+    // Appended to ipfsHistory on every linkIPFSDocument() call so
+    // no CID is ever overwritten — full document provenance is preserved.
+    struct IPFSRecord {
+        string  ipfsHash;    // IPFS Content Identifier (CIDv0 or CIDv1)
+        address uploadedBy;  // Address that linked this document
+        uint256 timestamp;   // Block timestamp of the link
+        string  docType;     // e.g. "BatchCertificate", "LabReport", "COA", "AuditReport"
+    }
 
-    mapping(string => Batch)           private batches;
-    mapping(string => HistoryEntry[])  private batchHistory;
+    // ── State variables ──────────────────────────────────────────────
 
-    // ─────────────────────────── Events ──────────────────────────────────────
+    address public admin;
 
-    event RoleAssigned(address indexed account, Role role);
-    event BatchRegistered(string indexed batchId, address indexed manufacturer, string metadataCID);
-    event OwnershipTransferred(string indexed batchId, address indexed from, address indexed to, string ipfsCID);
-    event BatchVerified(string indexed batchId, address indexed verifier);
-    event DocumentAttached(string indexed batchId, string ipfsCID, string docType);
+    mapping(address => Role)             public roles;
+    mapping(string  => DrugBatch)        public batches;
+    mapping(string  => TransferRecord[]) public transferHistory;
+    mapping(string  => IPFSRecord[])     public ipfsHistory;     // batchId → append-only IPFS document history
 
-    // ─────────────────────────── Modifiers ───────────────────────────────────
+    string[] public batchIds;
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Not contract owner");
+    // ── Events ───────────────────────────────────────────────────────
+
+    event BatchRegistered(string batchId, string drugName, address manufacturer, uint256 timestamp);
+    event OwnershipTransferred(string batchId, address from, address to, uint256 timestamp);
+    event BatchReceived(string batchId, address receiver, uint256 timestamp);
+    event BatchVerified(string batchId, address verifiedBy, uint256 timestamp);
+    event BatchFlagged(string batchId, address flaggedBy, string reason, uint256 timestamp);
+    event RoleAssigned(address account, Role role);
+
+    // Emitted whenever a new IPFS document is linked to a batch
+    event IPFSDocumentLinked(
+        string  indexed batchId,
+        string  ipfsHash,
+        address indexed uploadedBy,
+        string  docType,
+        uint256 timestamp
+    );
+
+    // ── Access-control modifiers ─────────────────────────────────────
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin can call this");
         _;
     }
 
     modifier onlyRole(Role _role) {
-        require(roles[msg.sender] == _role, "Unauthorized role");
+        require(roles[msg.sender] == _role, "Caller does not have the required role");
         _;
     }
 
-    modifier onlyRoles(Role r1, Role r2) {
-        require(roles[msg.sender] == r1 || roles[msg.sender] == r2, "Unauthorized role");
+    modifier onlyCurrentOwner(string memory _batchId) {
+        require(
+            batches[_batchId].currentOwner == msg.sender,
+            "Caller is not the current owner of this batch"
+        );
         _;
     }
 
-    modifier batchExists(string memory batchId) {
-        require(batches[batchId].exists, "Batch not found");
+    modifier batchExists(string memory _batchId) {
+        require(
+            bytes(batches[_batchId].batchId).length > 0,
+            "Batch does not exist"
+        );
         _;
     }
 
-    // ─────────────────────────── Constructor ─────────────────────────────────
+    // ── Constructor ──────────────────────────────────────────────────
 
     constructor() {
-        owner = msg.sender;
-        roles[msg.sender] = Role.Regulator;
+        admin = msg.sender;
     }
 
-    // ─────────────────────────── Role Management ─────────────────────────────
+    // ── Role management ──────────────────────────────────────────────
 
-    function assignRole(address account, Role role) external onlyOwner {
-        roles[account] = role;
-        emit RoleAssigned(account, role);
+    function assignRole(address _account, Role _role) external onlyAdmin {
+        roles[_account] = _role;
+        emit RoleAssigned(_account, _role);
     }
 
-    // ─────────────────────────── Batch Registration ──────────────────────────
+    function getRole(address _account) external view returns (Role) {
+        return roles[_account];
+    }
 
-    /**
-     * @notice Register a new drug batch.
-     * @param batchId        Unique batch identifier
-     * @param drugName       Drug name / product name
-     * @param manufactureDate Unix timestamp
-     * @param expiryDate     Unix timestamp
-     * @param metadataCID    IPFS CID of the batch metadata JSON (COA, formulation, etc.)
-     */
+    // ── Batch registration ───────────────────────────────────────────
+
     function registerBatch(
-        string memory batchId,
-        string memory drugName,
-        uint256 manufactureDate,
-        uint256 expiryDate,
-        string memory metadataCID
+        string memory _batchId,
+        string memory _drugName,
+        uint256 _manufactureDate,
+        uint256 _expiryDate,
+        string memory _ipfsHash
     ) external onlyRole(Role.Manufacturer) {
-        require(!batches[batchId].exists, "Batch already registered");
-        require(bytes(metadataCID).length > 0, "IPFS CID required");
+        require(bytes(batches[_batchId].batchId).length == 0, "Batch already exists");
 
-        Batch storage b = batches[batchId];
-        b.batchId        = batchId;
-        b.drugName       = drugName;
-        b.manufactureDate = manufactureDate;
-        b.expiryDate     = expiryDate;
-        b.currentOwner   = msg.sender;
-        b.isVerified     = false;
-        b.exists         = true;
-        b.metadataCID    = metadataCID;
+        batches[_batchId] = DrugBatch({
+            batchId:         _batchId,
+            drugName:        _drugName,
+            currentOwner:    msg.sender,
+            status:          BatchStatus.Registered,
+            manufactureDate: _manufactureDate,
+            expiryDate:      _expiryDate,
+            ipfsHash:        _ipfsHash
+        });
 
-        batchHistory[batchId].push(HistoryEntry({
-            from:      address(0),
-            to:        msg.sender,
-            timestamp: block.timestamp,
-            action:    "REGISTERED",
-            ipfsCID:   metadataCID
-        }));
+        // Seed ipfsHistory with the genesis document if one was provided
+        if (bytes(_ipfsHash).length > 0) {
+            ipfsHistory[_batchId].push(IPFSRecord({
+                ipfsHash:   _ipfsHash,
+                uploadedBy: msg.sender,
+                timestamp:  block.timestamp,
+                docType:    "BatchRegistration"
+            }));
+            emit IPFSDocumentLinked(_batchId, _ipfsHash, msg.sender, "BatchRegistration", block.timestamp);
+        }
 
-        emit BatchRegistered(batchId, msg.sender, metadataCID);
+        batchIds.push(_batchId);
+        emit BatchRegistered(_batchId, _drugName, msg.sender, block.timestamp);
     }
 
-    // ─────────────────────────── Ownership Transfer ──────────────────────────
+    // ── Ownership transfer ───────────────────────────────────────────
 
-    /**
-     * @notice Transfer batch to next stakeholder.
-     * @param batchId        Batch identifier
-     * @param newOwner       Address of the recipient (must have Distributor/Pharmacy role)
-     * @param transferDocCID IPFS CID of the transfer document (shipping manifest, invoice, etc.)
-     */
     function transferOwnership(
-        string memory batchId,
-        address newOwner,
-        string memory transferDocCID
-    ) external batchExists(batchId) {
-        Batch storage b = batches[batchId];
-        require(b.currentOwner == msg.sender, "Not current owner");
-        require(
-            roles[newOwner] == Role.Distributor ||
-            roles[newOwner] == Role.Pharmacy    ||
-            roles[newOwner] == Role.Regulator,
-            "Recipient has invalid role"
-        );
+        string memory _batchId,
+        address _to,
+        string memory _note
+    ) external batchExists(_batchId) onlyCurrentOwner(_batchId) {
+        require(_to != address(0), "Cannot transfer to zero address");
+        require(roles[_to] != Role.None, "Recipient must have an assigned role");
 
-        address prevOwner = b.currentOwner;
-        b.currentOwner   = newOwner;
+        address previousOwner = batches[_batchId].currentOwner;
+        batches[_batchId].currentOwner = _to;
+        batches[_batchId].status = BatchStatus.InTransit;
 
-        batchHistory[batchId].push(HistoryEntry({
-            from:      prevOwner,
-            to:        newOwner,
+        transferHistory[_batchId].push(TransferRecord({
+            from:      previousOwner,
+            to:        _to,
             timestamp: block.timestamp,
-            action:    "TRANSFERRED",
-            ipfsCID:   transferDocCID
+            note:      _note
         }));
 
-        emit OwnershipTransferred(batchId, prevOwner, newOwner, transferDocCID);
+        emit OwnershipTransferred(_batchId, previousOwner, _to, block.timestamp);
     }
 
-    // ─────────────────────────── Verification ────────────────────────────────
+    // ── Receive shipment ─────────────────────────────────────────────
+
+    function receiveShipment(string memory _batchId)
+        external
+        batchExists(_batchId)
+        onlyCurrentOwner(_batchId)
+    {
+        require(
+            batches[_batchId].status == BatchStatus.InTransit,
+            "Batch is not in transit"
+        );
+        batches[_batchId].status = BatchStatus.Received;
+        emit BatchReceived(_batchId, msg.sender, block.timestamp);
+    }
+
+    // ── Verification ─────────────────────────────────────────────────
+
+    function verifyBatch(string memory _batchId)
+        external
+        batchExists(_batchId)
+        onlyRole(Role.Pharmacy)
+    {
+        batches[_batchId].status = BatchStatus.Verified;
+        emit BatchVerified(_batchId, msg.sender, block.timestamp);
+    }
+
+    // ── Flagging ─────────────────────────────────────────────────────
+
+    function flagBatch(string memory _batchId, string memory _reason)
+        external
+        batchExists(_batchId)
+    {
+        require(
+            roles[msg.sender] == Role.Regulator ||
+            roles[msg.sender] == Role.Pharmacy,
+            "Only Regulator or Pharmacy can flag"
+        );
+        batches[_batchId].status = BatchStatus.Flagged;
+        emit BatchFlagged(_batchId, msg.sender, _reason, block.timestamp);
+    }
+
+    // ── Read functions ───────────────────────────────────────────────
+
+    function getBatch(string memory _batchId)
+        external
+        view
+        batchExists(_batchId)
+        returns (DrugBatch memory)
+    {
+        return batches[_batchId];
+    }
+
+    function getHistory(string memory _batchId)
+        external
+        view
+        batchExists(_batchId)
+        returns (TransferRecord[] memory)
+    {
+        return transferHistory[_batchId];
+    }
+
+    function getBatchCount() external view returns (uint256) {
+        return batchIds.length;
+    }
+
+    function getBatchIdByIndex(uint256 _index) external view returns (string memory) {
+        require(_index < batchIds.length, "Index out of bounds");
+        return batchIds[_index];
+    }
+
+    // ── IPFS off-chain storage ───────────────────────────────────────
 
     /**
-     * @notice Pharmacy or Regulator verifies the batch.
+     * @notice Link a new IPFS document (CID) to an existing batch.
+     *         The CID is appended to an immutable ipfsHistory array so
+     *         no previous hash can ever be silently overwritten.
+     *         DrugBatch.ipfsHash is also updated to the latest CID so
+     *         callers of getBatch() always see the most recent document.
+     *
+     *         WHO CAN CALL:
+     *           - The current owner of the batch (any role), to attach
+     *             documents relevant to their custody stage.
+     *           - A Regulator, who may attach audit or lab reports at
+     *             any stage regardless of current ownership.
+     *
+     * @param _batchId  ID of the batch to attach the document to.
+     * @param _ipfsHash IPFS Content Identifier of the off-chain document.
+     * @param _docType  Human-readable label, e.g. "LabReport", "COA",
+     *                  "ShippingManifest", "AuditReport".
      */
-    function verifyBatch(string memory batchId)
-        external
-        batchExists(batchId)
-        onlyRoles(Role.Pharmacy, Role.Regulator)
-    {
-        Batch storage b = batches[batchId];
-        require(!b.isVerified, "Already verified");
-        b.isVerified = true;
+    function linkIPFSDocument(
+        string memory _batchId,
+        string memory _ipfsHash,
+        string memory _docType
+    ) external batchExists(_batchId) {
+        require(bytes(_ipfsHash).length > 0, "IPFS hash cannot be empty");
+        require(bytes(_docType).length  > 0, "Document type cannot be empty");
+        require(
+            batches[_batchId].currentOwner == msg.sender ||
+            roles[msg.sender] == Role.Regulator,
+            "Only current owner or Regulator can link documents"
+        );
 
-        batchHistory[batchId].push(HistoryEntry({
-            from:      msg.sender,
-            to:        msg.sender,
-            timestamp: block.timestamp,
-            action:    "VERIFIED",
-            ipfsCID:   ""
+        // Append to the immutable history — never overwritten
+        ipfsHistory[_batchId].push(IPFSRecord({
+            ipfsHash:   _ipfsHash,
+            uploadedBy: msg.sender,
+            timestamp:  block.timestamp,
+            docType:    _docType
         }));
 
-        emit BatchVerified(batchId, msg.sender);
-    }
+        // Update convenience pointer on the batch struct to the latest CID
+        batches[_batchId].ipfsHash = _ipfsHash;
 
-    // ─────────────────────────── Document Attachment ─────────────────────────
+        emit IPFSDocumentLinked(_batchId, _ipfsHash, msg.sender, _docType, block.timestamp);
+    }
 
     /**
-     * @notice Attach an additional IPFS document to a batch.
-     *         E.g., recall notice, temperature log, regulatory submission.
-     * @param batchId  Target batch
-     * @param ipfsCID  IPFS Content Identifier of the document
-     * @param docType  Human-readable document type tag
+     * @notice Returns the full IPFS document history for a batch.
+     *         Every CID ever linked is returned in chronological order,
+     *         giving auditors a complete document provenance trail.
+     * @param _batchId ID of the batch to query.
      */
-    function attachDocument(
-        string memory batchId,
-        string memory ipfsCID,
-        string memory docType
-    ) external batchExists(batchId) {
-        require(
-            roles[msg.sender] != Role.None && roles[msg.sender] != Role.Consumer,
-            "Not authorized"
-        );
-        require(bytes(ipfsCID).length > 0, "Empty CID");
-
-        batches[batchId].documents.push(BatchDocument({
-            ipfsCID:    ipfsCID,
-            docType:    docType,
-            uploadedAt: block.timestamp,
-            uploadedBy: msg.sender
-        }));
-
-        emit DocumentAttached(batchId, ipfsCID, docType);
-    }
-
-    // ─────────────────────────── Getters ─────────────────────────────────────
-
-    function getBatch(string memory batchId)
+    function getIPFSHistory(string memory _batchId)
         external
         view
-        batchExists(batchId)
-        returns (
-            string memory drugName,
-            uint256 manufactureDate,
-            uint256 expiryDate,
-            address currentOwner,
-            bool isVerified,
-            string memory metadataCID,
-            uint256 documentCount
-        )
+        batchExists(_batchId)
+        returns (IPFSRecord[] memory)
     {
-        Batch storage b = batches[batchId];
-        return (
-            b.drugName,
-            b.manufactureDate,
-            b.expiryDate,
-            b.currentOwner,
-            b.isVerified,
-            b.metadataCID,
-            b.documents.length
-        );
-    }
-
-    function getDocument(string memory batchId, uint256 index)
-        external
-        view
-        batchExists(batchId)
-        returns (string memory ipfsCID, string memory docType, uint256 uploadedAt, address uploadedBy)
-    {
-        BatchDocument storage d = batches[batchId].documents[index];
-        return (d.ipfsCID, d.docType, d.uploadedAt, d.uploadedBy);
-    }
-
-    function getHistory(string memory batchId)
-        external
-        view
-        batchExists(batchId)
-        returns (HistoryEntry[] memory)
-    {
-        return batchHistory[batchId];
-    }
-
-    function getRole(address account) external view returns (Role) {
-        return roles[account];
+        return ipfsHistory[_batchId];
     }
 }
