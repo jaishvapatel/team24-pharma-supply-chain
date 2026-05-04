@@ -144,7 +144,9 @@ Every batch stores a primary `metadataCID` at registration. Additional documents
 
 ## Setup & Installation
 
-### Unsure why this happens when you download this file from the repo; the executables are under a different subfolder, "...\team24-pharma-supply-chain-main\IPFS", run your shell from this location on the file inside the folder "IPFS.", or more specifically  >cd "...\team24-pharma-supply-chain-main\IPFS\team24-pharma-supply-chain-main" 
+```bash
+### Unsure why this happens when you download this file from the repo; the executables are under a different subfolder, "...\team24-pharma-supply-chain-main\IPFS", run your shell from this location on the file inside the folder "IPFS.", or more specifically  >cd "...\team24-pharma-supply-chain-main\IPFS\team24-pharma-supply-chain-main". if you run into additional issues, refer to the "bugs and fixes file" 
+```
 
 ### Prerequisites
 
