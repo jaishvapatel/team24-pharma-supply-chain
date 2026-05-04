@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Blockchain-based pharmaceutical supply chain traceability system — Team 24, CSE 540"/>
+  <title>PharmaSC — Pharmaceutical Supply Chain DApp</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Background Particles -->
+<div class="bg-particles">
+  <span></span><span></span><span></span><span></span>
+  <span></span><span></span><span></span><span></span>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">SC</div>
+    <h1><span>Pharma</span>SC</h1>
+  </div>
+  <div class="header-right">
+    <div class="conn-badge disconnected" id="connStatus"><span class="dot"></span>Not Connected</div>
+    <div class="net-badge">Hardhat Local</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Connect Card -->
+  <div class="connect-card" id="connectCard">
+    <h2>⛓️ Connect to Hardhat Node</h2>
+    <p>Start your local node first: <code>npx hardhat node</code></p>
+    <button class="btn btn-primary" onclick="connectAndDeploy()" id="btnConnect" style="max-width:360px;margin:0 auto">
+      Deploy Contract &amp; Connect
+    </button>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row hidden" id="statsRow">
+    <div class="stat-card">
+      <div class="stat-icon">📦</div>
+      <div class="stat-label">Total Batches</div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="stat-label">Verified</div>
+      <div class="stat-value" id="statVerified">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🚚</div>
+      <div class="stat-label">In Transit</div>
+      <div class="stat-value" id="statTransit">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⚠️</div>
+      <div class="stat-label">Flagged</div>
+      <div class="stat-value" id="statFlagged">0</div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="pipeline-card hidden" id="pipelineCard">
+    <div class="pipeline-title">Supply Chain Progress</div>
+    <div class="pipeline">
+      <div class="stage" id="s-mfg"><div class="s-icon">M</div><div class="s-label">Manufacturer</div></div>
+      <div class="pipe-arrow" id="a1">→</div>
+      <div class="stage" id="s-dist"><div class="s-icon">D</div><div class="s-label">Distributor</div></div>
+      <div class="pipe-arrow" id="a2">→</div>
+      <div class="stage" id="s-pharm"><div class="s-icon">P</div><div class="s-label">Pharmacy</div></div>
+      <div class="pipe-arrow" id="a3">→</div>
+      <div class="stage" id="s-verify"><div class="s-icon">✓</div><div class="s-label">Verified</div></div>
+    </div>
+  </div>
+
+  <!-- Role Tabs -->
+  <div class="role-tabs hidden" id="roleTabs">
+    <button class="role-tab active" onclick="switchRole('admin')">👑 Admin</button>
+    <button class="role-tab" onclick="switchRole('manufacturer')">🏭 Manufacturer</button>
+    <button class="role-tab" onclick="switchRole('distributor')">🚛 Distributor</button>
+    <button class="role-tab" onclick="switchRole('pharmacy')">💊 Pharmacy</button>
+    <button class="role-tab" onclick="switchRole('regulator')">🔍 Regulator</button>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid hidden" id="mainGrid">
+    <div class="left-col">
+
+      <!-- ADMIN -->
+      <div class="action-panel visible" id="panel-admin">
+        <div class="card">
+          <h3><span class="dot"></span>Assign Role</h3>
+          <div class="form-group"><label>Wallet Address</label><input type="text" id="roleAddr" placeholder="0x…"/></div>
+          <div class="form-group"><label>Role</label>
+            <select id="roleSelect">
+              <option value="1">Manufacturer</option><option value="2">Distributor</option>
+              <option value="3">Pharmacy</option><option value="4">Regulator</option>
+              <option value="5">Consumer</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="assignRole()">Assign Role</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span>Check Role</h3>
+          <div class="form-group"><label>Wallet Address</label><input type="text" id="checkRoleAddr" placeholder="0x…"/></div>
+          <button class="btn" onclick="checkRole()">Get Role</button>
+          <div id="roleResult" class="mt-12" style="display:none;font-size:13px;font-weight:600;color:var(--teal);padding:10px;background:var(--teal-dim);border-radius:8px"></div>
+        </div>
+      </div>
+
+      <!-- MANUFACTURER -->
+      <div class="action-panel" id="panel-manufacturer">
+        <div class="card">
+          <h3><span class="dot"></span>Register New Drug Batch</h3>
+          <div class="form-group"><label>Batch ID</label><input type="text" id="regBatchId" placeholder="e.g. BATCH-2026-001"/></div>
+          <div class="form-group"><label>Drug Name</label><input type="text" id="regDrugName" placeholder="e.g. Amoxicillin 500mg"/></div>
+          <div class="form-group"><label>Manufacture Date</label><input type="date" id="regMfgDate"/></div>
+          <div class="form-group"><label>Expiry Date</label><input type="date" id="regExpDate"/></div>
+          <div class="form-group"><label>IPFS Document Hash</label><input type="text" id="regIpfs" placeholder="QmXoyp…"/></div>
+          <button class="btn btn-primary" onclick="registerBatch()">Register Batch</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span>Transfer to Distributor</h3>
+          <div class="form-group"><label>Batch ID</label><input type="text" id="mfgTransBatchId" placeholder="BATCH-2026-001"/></div>
+          <div class="form-group"><label>Distributor Address</label><input type="text" id="mfgTransTo" placeholder="0x…"/></div>
+          <div class="form-group"><label>Shipment Note</label><input type="text" id="mfgTransNote" placeholder="e.g. Shipment #SHP-001"/></div>
+          <button class="btn btn-primary" onclick="transferFrom('manufacturer')">Transfer Ownership</button>
+        </div>
+      </div>
+
+      <!-- DISTRIBUTOR -->
+      <div class="action-panel" id="panel-distributor">
+        <div class="card">
+          <h3><span class="dot"></span>Confirm Receipt</h3>
+          <div class="form-group"><label>Batch ID</label><input type="text" id="distRecvBatchId" placeholder="BATCH-2026-001"/></div>
+          <button class="btn btn-primary" onclick="receiveShipment('distributor')">Confirm Receipt</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span>Transfer to Pharmacy</h3>
+          <div class="form-group"><label>Batch ID</label><input type="text" id="distTransBatchId" placeholder="BATCH-2026-001"/></div>
+          <div class="form-group"><label>Pharmacy Address</label><input type="text" id="distTransTo" placeholder="0x…"/></div>
+          <div class="form-group"><label>Delivery Note</label><input type="text" id="distTransNote" placeholder="e.g. Delivery #DEL-045"/></div>
+          <button class="btn btn-primary" onclick="transferFrom('distributor')">Transfer Ownership</button>
+        </div>
+      </div>
+
+      <!-- PHARMACY -->
+      <div class="action-panel" id="panel-pharmacy">
+        <div class="card">
+          <h3><span class="dot"></span>Confirm Receipt</h3>
+          <div class="form-group"><label>Batch ID</label><input type="text" id="pharmRecvBatchId" placeholder="BATCH-2026-001"/></div>
+          <button class="btn btn-primary" onclick="receiveShipment('pharmacy')">Confirm Receipt</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span>Verify Batch</h3>
+          <div class="form-group"><label>Batch ID</label><input type="text" id="verifyBatchId" placeholder="BATCH-2026-001"/></div>
+          <button class="btn btn-primary" onclick="verifyBatch()">Verify as Authentic</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span>Flag Batch</h3>
+          <div class="form-group"><label>Batch ID</label><input type="text" id="flagBatchId" placeholder="BATCH-2026-001"/></div>
+          <div class="form-group"><label>Reason</label><input type="text" id="flagReason" placeholder="e.g. Temperature anomaly"/></div>
+          <button class="btn btn-danger" onclick="flagBatch()">⚠ Flag Batch</button>
+        </div>
+      </div>
+
+      <!-- REGULATOR -->
+      <div class="action-panel" id="panel-regulator">
+        <div class="card">
+          <h3><span class="dot"></span>Flag Batch (Regulator)</h3>
+          <div class="form-group"><label>Batch ID</label><input type="text" id="regFlagBatchId" placeholder="BATCH-2026-001"/></div>
+          <div class="form-group"><label>Reason</label><input type="text" id="regFlagReason" placeholder="e.g. Compliance violation"/></div>
+          <button class="btn btn-danger" onclick="regFlagBatch()">⚠ Flag Batch</button>
+        </div>
+      </div>
+
+      <!-- LOOKUP (always visible) -->
+      <div class="card">
+        <h3><span class="dot"></span>Look Up Batch</h3>
+        <div class="flex-row">
+          <div class="form-group"><input type="text" id="lookupBatchId" placeholder="Enter Batch ID…"/></div>
+          <button class="btn btn-sm" onclick="lookupBatch()">Get Batch</button>
+          <button class="btn btn-sm" onclick="lookupHistory()">Get History</button>
+        </div>
+        <div id="batchResult" class="mt-12"></div>
+        <div id="historyResult" class="mt-12"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Console -->
+    <div class="right-col">
+      <div class="console-panel" style="position:sticky;top:80px">
+        <div class="console-header">
+          <div class="dots">
+            <span style="background:var(--rose)"></span>
+            <span style="background:var(--amber)"></span>
+            <span style="background:var(--emerald)"></span>
+          </div>
+          Transaction Log
+        </div>
+        <div class="console-body" id="console"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Pharmaceutical Supply Chain Traceability System · Ethereum / Solidity · 
+    <a href="#">Team 24</a> · CSE 540 Spring B 2026
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Scripts -->
+<script src="bytecode.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
