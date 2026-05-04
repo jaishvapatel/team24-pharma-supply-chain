@@ -44,14 +44,14 @@ This system provides a secure, verifiable way to track drug batches from manufac
 
 ## Features
 
-- ✅ Register drug batches with IPFS metadata storage
-- ✅ Transfer ownership across stakeholders (Manufacturer → Distributor → Pharmacy)
-- ✅ Attach supporting documents (COAs, lab reports, shipping manifests) to IPFS
-- ✅ Verify batch authenticity at pharmacy/regulator level
-- ✅ Immutable audit trail with IPFS document links at every step
-- ✅ Role-based access control (Manufacturer, Distributor, Pharmacy, Regulator, Consumer)
-- ✅ Multi-gateway IPFS fallback for reliable document retrieval
-- ✅ Batch viewer fetches both on-chain data and IPFS metadata simultaneously
+- Register drug batches with IPFS metadata storage
+- Transfer ownership across stakeholders (Manufacturer → Distributor → Pharmacy)
+- Attach supporting documents (COAs, lab reports, shipping manifests) to IPFS
+- Verify batch authenticity at pharmacy/regulator level
+- Immutable audit trail with IPFS document links at every step
+- Role-based access control (Manufacturer, Distributor, Pharmacy, Regulator, Consumer)
+- Multi-gateway IPFS fallback for reliable document retrieval
+- Batch viewer fetches both on-chain data and IPFS metadata simultaneously
 
 ---
 
