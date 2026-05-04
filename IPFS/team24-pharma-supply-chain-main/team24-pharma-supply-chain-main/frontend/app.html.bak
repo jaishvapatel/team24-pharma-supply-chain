@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PharmaSC — Team 24</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#f0f7f4;--bg-glass:rgba(255,255,255,0.72);--surface:#fff;
+      --border:#d4e4dc;--border-light:#e8f0ec;--text:#1a2e28;
+      --text-sec:#5a7a6e;--text-dim:#8aa89a;--teal:#0d9373;
+      --teal-light:#e6f5f0;--teal-glow:rgba(13,147,115,0.08);
+      --mint:#34d399;--mint-bg:rgba(52,211,153,0.1);
+      --sky:#38bdf8;--sky-bg:rgba(56,189,248,0.08);
+      --amber:#f59e0b;--amber-bg:rgba(245,158,11,0.08);
+      --rose:#f43f5e;--rose-bg:rgba(244,63,94,0.06);
+      --shadow-sm:0 1px 3px rgba(26,46,40,0.06);
+      --shadow-md:0 4px 16px rgba(26,46,40,0.08);
+      --radius:14px;
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+      background-image:radial-gradient(ellipse 600px 400px at 10% 20%,rgba(13,147,115,0.04) 0%,transparent 70%),
+      radial-gradient(ellipse 500px 500px at 90% 80%,rgba(56,189,248,0.04) 0%,transparent 70%)}
+    header{backdrop-filter:blur(20px);background:var(--bg-glass);border-bottom:1px solid var(--border-light);
+      padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--teal),var(--mint));border-radius:10px;
+      display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+    .logo h1{font-size:18px;font-weight:700;letter-spacing:-0.3px}
+    .logo h1 span{color:var(--teal)}
+    .header-right{display:flex;align-items:center;gap:12px}
+    .conn-status{font-size:12px;padding:6px 14px;border-radius:20px;font-weight:600}
+    .conn-status.connected{background:var(--mint-bg);color:#059669}
+    .conn-status.disconnected{background:var(--rose-bg);color:var(--rose)}
+    .header-meta{font-size:12px;color:var(--text-dim);font-weight:500;background:var(--teal-light);padding:6px 14px;border-radius:20px}
+    .container{max-width:1200px;margin:0 auto;padding:24px 28px}
+
+    /* Role tabs */
+    .role-tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--surface);padding:6px;border-radius:12px;
+      border:1px solid var(--border-light);box-shadow:var(--shadow-sm)}
+    .role-tab{padding:10px 20px;border:none;background:transparent;color:var(--text-sec);border-radius:8px;
+      font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+    .role-tab:hover{background:var(--bg);color:var(--text)}
+    .role-tab.active{background:var(--teal);color:#fff}
+
+    /* Layout */
+    .main-grid{display:grid;grid-template-columns:1fr 380px;gap:20px}
+    @media(max-width:900px){.main-grid{grid-template-columns:1fr}}
+
+    /* Cards */
+    .card{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);
+      padding:22px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+    .card h3{font-size:13px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;
+      text-transform:uppercase;letter-spacing:0.6px;color:var(--text-sec)}
+    .card h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal)}
+
+    /* Action panels */
+    .action-panel{display:none}
+    .action-panel.visible{display:block}
+
+    /* Form elements */
+    .form-group{margin-bottom:14px}
+    .form-group label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;
+      color:var(--text-dim);margin-bottom:6px}
+    .form-group input,.form-group select{width:100%;padding:10px 14px;border:1.5px solid var(--border);
+      border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);
+      background:var(--bg);transition:border-color 0.2s}
+    .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--teal)}
+    .form-group input::placeholder{color:var(--text-dim)}
+
+    .btn{padding:10px 20px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);
+      border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;
+      transition:all 0.25s;box-shadow:var(--shadow-sm);width:100%}
+    .btn:hover:not(:disabled){border-color:var(--teal);color:var(--teal);background:var(--teal-light);
+      transform:translateY(-1px);box-shadow:var(--shadow-md)}
+    .btn:disabled{opacity:0.4;cursor:not-allowed}
+    .btn-primary{background:linear-gradient(135deg,var(--teal),#0aa87e);border-color:transparent;color:#fff}
+    .btn-primary:hover:not(:disabled){background:linear-gradient(135deg,#0b836a,var(--teal));color:#fff;border-color:transparent}
+    .btn-danger{border-color:var(--rose);color:var(--rose)}
+    .btn-danger:hover:not(:disabled){background:var(--rose);color:#fff}
+    .btn-sm{padding:8px 14px;font-size:12px;width:auto}
+
+    /* Batch display */
+    .batch-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .batch-item{background:var(--bg);border-radius:10px;padding:12px 14px;border:1px solid var(--border-light)}
+    .batch-item .lbl{font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;
+      letter-spacing:0.8px;margin-bottom:4px}
+    .batch-item .val{font-size:13px;font-weight:600;word-break:break-all}
+    .batch-item.full{grid-column:1/-1}
+
+    .status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+    .status-0{background:var(--sky-bg);color:var(--sky)}
+    .status-1{background:var(--amber-bg);color:var(--amber)}
+    .status-2{background:var(--teal-light);color:var(--teal)}
+    .status-3{background:var(--mint-bg);color:#059669}
+    .status-4{background:var(--rose-bg);color:var(--rose)}
+
+    /* History table */
+    .history-table{width:100%;border-collapse:collapse;font-size:12px}
+    .history-table th{font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-dim);
+      padding:8px 10px;text-align:left;border-bottom:1.5px solid var(--border);font-weight:600}
+    .history-table td{padding:10px;border-bottom:1px solid var(--border-light)}
+
+    /* Console */
+    .console-panel{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);
+      overflow:hidden;box-shadow:var(--shadow-sm)}
+    .console-header{background:var(--bg);padding:10px 16px;font-size:11px;font-weight:700;display:flex;
+      align-items:center;gap:8px;border-bottom:1px solid var(--border-light);color:var(--text-sec);
+      text-transform:uppercase;letter-spacing:0.8px}
+    .console-header .dots{display:flex;gap:4px}
+    .console-header .dots span{width:9px;height:9px;border-radius:50%}
+    .console-body{padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.9;
+      max-height:500px;overflow-y:auto;background:#fafdf9}
+    .log-line{animation:fadeIn 0.3s ease forwards}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:translateX(0)}}
+    .log-line .ts{color:var(--text-dim);font-size:10px}
+    .log-line .tag{display:inline-block;padding:1px 7px;border-radius:5px;font-size:9px;font-weight:700;
+      margin:0 5px;letter-spacing:0.4px;text-transform:uppercase}
+    .tag-tx{background:var(--sky-bg);color:var(--sky)}
+    .tag-ok{background:var(--mint-bg);color:#059669}
+    .tag-role{background:var(--teal-light);color:var(--teal)}
+    .tag-err{background:var(--rose-bg);color:var(--rose)}
+    .tag-info{background:var(--bg);color:var(--text-dim)}
+    .addr{color:var(--teal);font-size:11px}
+
+    /* Modal */
+    .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(26,46,40,0.3);backdrop-filter:blur(4px);z-index:200;
+      align-items:center;justify-content:center}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--surface);border-radius:var(--radius);padding:28px;width:420px;max-width:90vw;
+      box-shadow:0 20px 60px rgba(26,46,40,0.15)}
+    .modal h3{font-size:16px;font-weight:700;margin-bottom:20px}
+    .modal-actions{display:flex;gap:10px;margin-top:20px}
+    .modal-actions .btn{flex:1}
+
+    /* Toast */
+    .toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:12px;font-size:13px;
+      font-weight:600;z-index:300;transform:translateY(100px);opacity:0;transition:all 0.3s ease;
+      box-shadow:0 8px 24px rgba(0,0,0,0.12)}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.success{background:#059669;color:#fff}
+    .toast.error{background:var(--rose);color:#fff}
+
+    .footer{text-align:center;padding:20px;font-size:11px;color:var(--text-dim)}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">SC</div>
+    <h1><span>Pharma</span>SC</h1>
+  </div>
+  <div class="header-right">
+    <div class="conn-status disconnected" id="connStatus">Not Connected</div>
+    <div class="header-meta">Team 24 &middot; CSE 540</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Connect button -->
+  <div class="card" id="connectCard">
+    <h3><span class="dot"></span> Connect to Hardhat Node</h3>
+    <p style="font-size:13px;color:var(--text-sec);margin-bottom:14px;">
+      Make sure you have a local Hardhat node running: <code style="background:var(--bg);padding:2px 8px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;">npx hardhat node</code>
+    </p>
+    <button class="btn btn-primary" onclick="connectAndDeploy()" id="btnConnect">Deploy Contract &amp; Connect</button>
+  </div>
+
+  <!-- Role tabs -->
+  <div class="role-tabs" id="roleTabs" style="display:none">
+    <button class="role-tab active" onclick="switchRole('admin')">Admin</button>
+    <button class="role-tab" onclick="switchRole('manufacturer')">Manufacturer</button>
+    <button class="role-tab" onclick="switchRole('distributor')">Distributor</button>
+    <button class="role-tab" onclick="switchRole('pharmacy')">Pharmacy</button>
+    <button class="role-tab" onclick="switchRole('regulator')">Regulator</button>
+  </div>
+
+  <div class="main-grid" id="mainGrid" style="display:none">
+    <div class="left-col">
+
+      <!-- ADMIN PANEL -->
+      <div class="action-panel visible" id="panel-admin">
+        <div class="card">
+          <h3><span class="dot"></span> Assign Role</h3>
+          <div class="form-group">
+            <label>Wallet Address</label>
+            <input type="text" id="roleAddr" placeholder="0x..." />
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="roleSelect">
+              <option value="1">Manufacturer</option>
+              <option value="2">Distributor</option>
+              <option value="3">Pharmacy</option>
+              <option value="4">Regulator</option>
+              <option value="5">Consumer</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="assignRole()">Assign Role</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span> Check Role</h3>
+          <div class="form-group">
+            <label>Wallet Address</label>
+            <input type="text" id="checkRoleAddr" placeholder="0x..." />
+          </div>
+          <button class="btn" onclick="checkRole()">Get Role</button>
+          <div id="roleResult" style="margin-top:12px;font-size:13px;font-weight:600;color:var(--teal)"></div>
+        </div>
+      </div>
+
+      <!-- MANUFACTURER PANEL -->
+      <div class="action-panel" id="panel-manufacturer">
+        <div class="card">
+          <h3><span class="dot"></span> Register New Drug Batch</h3>
+          <div class="form-group">
+            <label>Batch ID</label>
+            <input type="text" id="regBatchId" placeholder="e.g. BATCH-2026-001" />
+          </div>
+          <div class="form-group">
+            <label>Drug Name</label>
+            <input type="text" id="regDrugName" placeholder="e.g. Amoxicillin 500mg" />
+          </div>
+          <div class="form-group">
+            <label>Manufacture Date</label>
+            <input type="date" id="regMfgDate" />
+          </div>
+          <div class="form-group">
+            <label>Expiry Date</label>
+            <input type="date" id="regExpDate" />
+          </div>
+          <div class="form-group">
+            <label>IPFS Document Hash</label>
+            <input type="text" id="regIpfs" placeholder="QmXoyp..." />
+          </div>
+          <button class="btn btn-primary" onclick="registerBatch()">Register Batch</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span> Transfer to Distributor</h3>
+          <div class="form-group">
+            <label>Batch ID</label>
+            <input type="text" id="mfgTransBatchId" placeholder="BATCH-2026-001" />
+          </div>
+          <div class="form-group">
+            <label>Distributor Address</label>
+            <input type="text" id="mfgTransTo" placeholder="0x..." />
+          </div>
+          <div class="form-group">
+            <label>Shipment Note</label>
+            <input type="text" id="mfgTransNote" placeholder="e.g. Shipment #SHP-001" />
+          </div>
+          <button class="btn btn-primary" onclick="transferFrom('manufacturer')">Transfer Ownership</button>
+        </div>
+      </div>
+
+      <!-- DISTRIBUTOR PANEL -->
+      <div class="action-panel" id="panel-distributor">
+        <div class="card">
+          <h3><span class="dot"></span> Confirm Receipt</h3>
+          <div class="form-group">
+            <label>Batch ID</label>
+            <input type="text" id="distRecvBatchId" placeholder="BATCH-2026-001" />
+          </div>
+          <button class="btn btn-primary" onclick="receiveShipment('distributor')">Confirm Receipt</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span> Transfer to Pharmacy</h3>
+          <div class="form-group">
+            <label>Batch ID</label>
+            <input type="text" id="distTransBatchId" placeholder="BATCH-2026-001" />
+          </div>
+          <div class="form-group">
+            <label>Pharmacy Address</label>
+            <input type="text" id="distTransTo" placeholder="0x..." />
+          </div>
+          <div class="form-group">
+            <label>Delivery Note</label>
+            <input type="text" id="distTransNote" placeholder="e.g. Delivery #DEL-045" />
+          </div>
+          <button class="btn btn-primary" onclick="transferFrom('distributor')">Transfer Ownership</button>
+        </div>
+      </div>
+
+      <!-- PHARMACY PANEL -->
+      <div class="action-panel" id="panel-pharmacy">
+        <div class="card">
+          <h3><span class="dot"></span> Confirm Receipt</h3>
+          <div class="form-group">
+            <label>Batch ID</label>
+            <input type="text" id="pharmRecvBatchId" placeholder="BATCH-2026-001" />
+          </div>
+          <button class="btn btn-primary" onclick="receiveShipment('pharmacy')">Confirm Receipt</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span> Verify Batch</h3>
+          <div class="form-group">
+            <label>Batch ID</label>
+            <input type="text" id="verifyBatchId" placeholder="BATCH-2026-001" />
+          </div>
+          <button class="btn btn-primary" onclick="verifyBatch()">Verify as Authentic</button>
+        </div>
+        <div class="card">
+          <h3><span class="dot"></span> Flag Batch</h3>
+          <div class="form-group">
+            <label>Batch ID</label>
+            <input type="text" id="flagBatchId" placeholder="BATCH-2026-001" />
+          </div>
+          <div class="form-group">
+            <label>Reason</label>
+            <input type="text" id="flagReason" placeholder="e.g. Temperature anomaly" />
+          </div>
+          <button class="btn btn-danger" onclick="flagBatch()">Flag Batch</button>
+        </div>
+      </div>
+
+      <!-- REGULATOR PANEL -->
+      <div class="action-panel" id="panel-regulator">
+        <div class="card">
+          <h3><span class="dot"></span> Flag Batch (Regulator)</h3>
+          <div class="form-group">
+            <label>Batch ID</label>
+            <input type="text" id="regFlagBatchId" placeholder="BATCH-2026-001" />
+          </div>
+          <div class="form-group">
+            <label>Reason</label>
+            <input type="text" id="regFlagReason" placeholder="e.g. Compliance violation" />
+          </div>
+          <button class="btn btn-danger" onclick="regFlagBatch()">Flag Batch</button>
+        </div>
+      </div>
+
+      <!-- LOOKUP (visible on all tabs) -->
+      <div class="card">
+        <h3><span class="dot"></span> Look Up Batch</h3>
+        <div style="display:flex;gap:8px">
+          <div class="form-group" style="flex:1;margin-bottom:0">
+            <input type="text" id="lookupBatchId" placeholder="Enter Batch ID..." />
+          </div>
+          <button class="btn btn-sm" onclick="lookupBatch()" style="width:auto;align-self:flex-end;white-space:nowrap">Get Batch</button>
+          <button class="btn btn-sm" onclick="lookupHistory()" style="width:auto;align-self:flex-end;white-space:nowrap">Get History</button>
+        </div>
+        <div id="batchResult" style="margin-top:14px"></div>
+        <div id="historyResult" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Transaction Log -->
+    <div class="right-col">
+      <div class="console-panel" style="position:sticky;top:80px">
+        <div class="console-header">
+          <div class="dots">
+            <span style="background:var(--rose)"></span>
+            <span style="background:var(--amber)"></span>
+            <span style="background:var(--mint)"></span>
+          </div>
+          Transaction Log
+        </div>
+        <div class="console-body" id="console"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Pharmaceutical Supply Chain Traceability System &middot; Ethereum / Solidity &middot; Team 24</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Contract ABI (only the functions we use) ─────────────────────
+const CONTRACT_ABI = [
+  "function admin() view returns (address)",
+  "function assignRole(address _account, uint8 _role)",
+  "function getRole(address _account) view returns (uint8)",
+  "function registerBatch(string _batchId, string _drugName, uint256 _manufactureDate, uint256 _expiryDate, string _ipfsHash)",
+  "function transferOwnership(string _batchId, address _to, string _note)",
+  "function receiveShipment(string _batchId)",
+  "function verifyBatch(string _batchId)",
+  "function flagBatch(string _batchId, string _reason)",
+  "function getBatch(string _batchId) view returns (tuple(string batchId, string drugName, address currentOwner, uint8 status, uint256 manufactureDate, uint256 expiryDate, string ipfsHash))",
+  "function getHistory(string _batchId) view returns (tuple(address from, address to, uint256 timestamp, string note)[])",
+  "function getBatchCount() view returns (uint256)",
+  "event BatchRegistered(string batchId, string drugName, address manufacturer, uint256 timestamp)",
+  "event OwnershipTransferred(string batchId, address from, address to, uint256 timestamp)",
+  "event BatchReceived(string batchId, address receiver, uint256 timestamp)",
+  "event BatchVerified(string batchId, address verifiedBy, uint256 timestamp)",
+  "event BatchFlagged(string batchId, address flaggedBy, string reason, uint256 timestamp)",
+  "event RoleAssigned(address account, uint8 role)"
+];
+
+// ── Compiled bytecode (will be populated on deploy) ──────────────
+// We'll deploy from the Hardhat artifacts instead
+const ROLE_NAMES = ["None", "Manufacturer", "Distributor", "Pharmacy", "Regulator", "Consumer"];
+const STATUS_NAMES = ["Registered", "InTransit", "Received", "Verified", "Flagged"];
+
+let provider, signers, contract, contractAddr;
+let accounts = {}; // role -> signer
+
+function short(a) { return a.slice(0, 6) + "..." + a.slice(-4); }
+function now() { return new Date().toLocaleTimeString(); }
+
+function log(tag, cls, msg) {
+  const el = document.getElementById("console");
+  const d = document.createElement("div");
+  d.className = "log-line";
+  d.innerHTML = `<span class="ts">[${now()}]</span> <span class="tag ${cls}">${tag}</span> ${msg}`;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
+
+function toast(msg, type = "success") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove("show"), 3000);
+}
+
+function switchRole(role) {
+  document.querySelectorAll(".role-tab").forEach(t => t.classList.remove("active"));
+  event.target.classList.add("active");
+  document.querySelectorAll(".action-panel").forEach(p => p.classList.remove("visible"));
+  document.getElementById(`panel-${role}`).classList.add("visible");
+}
+
+// ── Connect & Deploy ─────────────────────────────────────────────
+async function connectAndDeploy() {
+  const btn = document.getElementById("btnConnect");
+  btn.disabled = true;
+  btn.textContent = "Connecting...";
+
+  try {
+    // Connect to local Hardhat node
+    provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+    signers = await provider.listAccounts();
+
+    if (signers.length < 6) {
+      throw new Error("Need at least 6 accounts. Run: npx hardhat node");
+    }
+
+    log("CONN", "tag-ok", `Connected to Hardhat node — ${signers.length} accounts available`);
+
+    // Map accounts to roles
+    accounts.admin = await provider.getSigner(0);
+    accounts.manufacturer = await provider.getSigner(1);
+    accounts.distributor = await provider.getSigner(2);
+    accounts.pharmacy = await provider.getSigner(3);
+    accounts.regulator = await provider.getSigner(4);
+    accounts.consumer = await provider.getSigner(5);
+
+    // Log accounts
+    for (const [role, signer] of Object.entries(accounts)) {
+      const addr = await signer.getAddress();
+      log("INFO", "tag-info", `${role.charAt(0).toUpperCase() + role.slice(1)}: <span class="addr">${short(addr)}</span>`);
+    }
+
+    // Deploy contract
+    log("TX", "tag-tx", "Deploying PharmaceuticalSupplyChain contract...");
+
+    // Fetch the compiled artifact from Hardhat
+    const artifactResp = await fetch("http://127.0.0.1:8545", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0", method: "hardhat_getAutomine", params: [], id: 1
+      })
+    });
+
+    // We need the bytecode — let's use the factory approach
+    // The ABI + bytecode from compiled contract
+    const factory = new ethers.ContractFactory(
+      CONTRACT_ABI,
+      BYTECODE,
+      accounts.admin
+    );
+
+    contract = await factory.deploy();
+    await contract.waitForDeployment();
+    contractAddr = await contract.getAddress();
+
+    log("OK", "tag-ok", `Contract deployed at <span class="addr">${short(contractAddr)}</span>`);
+    log("OK", "tag-ok", `Admin: <span class="addr">${short(await accounts.admin.getAddress())}</span>`);
+
+    // Assign roles automatically
+    log("TX", "tag-tx", "Assigning roles to accounts...");
+
+    await (await contract.connect(accounts.admin).assignRole(await accounts.manufacturer.getAddress(), 1)).wait();
+    log("OK", "tag-ok", `Manufacturer assigned: <span class="addr">${short(await accounts.manufacturer.getAddress())}</span>`);
+
+    await (await contract.connect(accounts.admin).assignRole(await accounts.distributor.getAddress(), 2)).wait();
+    log("OK", "tag-ok", `Distributor assigned: <span class="addr">${short(await accounts.distributor.getAddress())}</span>`);
+
+    await (await contract.connect(accounts.admin).assignRole(await accounts.pharmacy.getAddress(), 3)).wait();
+    log("OK", "tag-ok", `Pharmacy assigned: <span class="addr">${short(await accounts.pharmacy.getAddress())}</span>`);
+
+    await (await contract.connect(accounts.admin).assignRole(await accounts.regulator.getAddress(), 4)).wait();
+    log("OK", "tag-ok", `Regulator assigned: <span class="addr">${short(await accounts.regulator.getAddress())}</span>`);
+
+    await (await contract.connect(accounts.admin).assignRole(await accounts.consumer.getAddress(), 5)).wait();
+    log("OK", "tag-ok", `Consumer assigned: <span class="addr">${short(await accounts.consumer.getAddress())}</span>`);
+
+    // Update UI
+    document.getElementById("connStatus").textContent = `Connected: ${short(contractAddr)}`;
+    document.getElementById("connStatus").className = "conn-status connected";
+    document.getElementById("connectCard").style.display = "none";
+    document.getElementById("roleTabs").style.display = "flex";
+    document.getElementById("mainGrid").style.display = "grid";
+
+    // Pre-fill some addresses for convenience
+    document.getElementById("mfgTransTo").value = await accounts.distributor.getAddress();
+    document.getElementById("distTransTo").value = await accounts.pharmacy.getAddress();
+
+    toast("Contract deployed & roles assigned!");
+
+  } catch (err) {
+    log("ERR", "tag-err", `Error: ${err.message}`);
+    toast(err.message, "error");
+    btn.disabled = false;
+    btn.textContent = "Deploy Contract & Connect";
+  }
+}
+
+// ── Admin: Assign Role ───────────────────────────────────────────
+async function assignRole() {
+  const addr = document.getElementById("roleAddr").value.trim();
+  const role = parseInt(document.getElementById("roleSelect").value);
+  if (!addr) return toast("Enter an address", "error");
+
+  try {
+    log("TX", "tag-tx", `Assigning ${ROLE_NAMES[role]} to <span class="addr">${short(addr)}</span>...`);
+    const tx = await contract.connect(accounts.admin).assignRole(addr, role);
+    await tx.wait();
+    log("OK", "tag-ok", `${ROLE_NAMES[role]} role assigned to <span class="addr">${short(addr)}</span>`);
+    toast(`Role assigned: ${ROLE_NAMES[role]}`);
+  } catch (err) {
+    log("ERR", "tag-err", `Failed: ${err.reason || err.message}`);
+    toast(err.reason || err.message, "error");
+  }
+}
+
+// ── Admin: Check Role ────────────────────────────────────────────
+async function checkRole() {
+  const addr = document.getElementById("checkRoleAddr").value.trim();
+  if (!addr) return toast("Enter an address", "error");
+
+  try {
+    const role = await contract.getRole(addr);
+    document.getElementById("roleResult").textContent = `Role: ${ROLE_NAMES[Number(role)]}`;
+    log("INFO", "tag-info", `<span class="addr">${short(addr)}</span> has role: ${ROLE_NAMES[Number(role)]}`);
+  } catch (err) {
+    log("ERR", "tag-err", `Failed: ${err.reason || err.message}`);
+  }
+}
+
+// ── Manufacturer: Register Batch ─────────────────────────────────
+async function registerBatch() {
+  const batchId = document.getElementById("regBatchId").value.trim();
+  const drugName = document.getElementById("regDrugName").value.trim();
+  const mfgDate = new Date(document.getElementById("regMfgDate").value).getTime() / 1000 || Math.floor(Date.now()/1000);
+  const expDate = new Date(document.getElementById("regExpDate").value).getTime() / 1000 || (Math.floor(Date.now()/1000) + 365*86400);
+  const ipfs = document.getElementById("regIpfs").value.trim() || "QmNoHash";
+
+  if (!batchId || !drugName) return toast("Fill in Batch ID and Drug Name", "error");
+
+  try {
+    log("TX", "tag-tx", `Registering batch <b>${batchId}</b> — ${drugName}...`);
+    const tx = await contract.connect(accounts.manufacturer).registerBatch(batchId, drugName, mfgDate, expDate, ipfs);
+    await tx.wait();
+    log("OK", "tag-ok", `Batch <b>${batchId}</b> registered successfully`);
+    log("INFO", "tag-info", `Drug: ${drugName} | IPFS: ${ipfs}`);
+    toast(`Batch ${batchId} registered!`);
+  } catch (err) {
+    log("ERR", "tag-err", `Failed: ${err.reason || err.message}`);
+    toast(err.reason || err.message, "error");
+  }
+}
+
+// ── Transfer Ownership ───────────────────────────────────────────
+async function transferFrom(fromRole) {
+  let batchId, to, note, signer;
+
+  if (fromRole === "manufacturer") {
+    batchId = document.getElementById("mfgTransBatchId").value.trim();
+    to = document.getElementById("mfgTransTo").value.trim();
+    note = document.getElementById("mfgTransNote").value.trim() || "Transfer";
+    signer = accounts.manufacturer;
+  } else {
+    batchId = document.getElementById("distTransBatchId").value.trim();
+    to = document.getElementById("distTransTo").value.trim();
+    note = document.getElementById("distTransNote").value.trim() || "Transfer";
+    signer = accounts.distributor;
+  }
+
+  if (!batchId || !to) return toast("Fill in Batch ID and recipient address", "error");
+
+  try {
+    log("TX", "tag-tx", `Transferring <b>${batchId}</b> to <span class="addr">${short(to)}</span>...`);
+    const tx = await contract.connect(signer).transferOwnership(batchId, to, note);
+    await tx.wait();
+    log("OK", "tag-ok", `<b>${batchId}</b> transferred to <span class="addr">${short(to)}</span> | Note: ${note}`);
+    toast(`Batch transferred!`);
+  } catch (err) {
+    log("ERR", "tag-err", `Failed: ${err.reason || err.message}`);
+    toast(err.reason || err.message, "error");
+  }
+}
+
+// ── Receive Shipment ─────────────────────────────────────────────
+async function receiveShipment(role) {
+  const batchId = document.getElementById(role === "distributor" ? "distRecvBatchId" : "pharmRecvBatchId").value.trim();
+  if (!batchId) return toast("Enter Batch ID", "error");
+
+  try {
+    log("TX", "tag-tx", `Confirming receipt of <b>${batchId}</b>...`);
+    const tx = await contract.connect(accounts[role]).receiveShipment(batchId);
+    await tx.wait();
+    log("OK", "tag-ok", `Receipt confirmed for <b>${batchId}</b>`);
+    toast("Receipt confirmed!");
+  } catch (err) {
+    log("ERR", "tag-err", `Failed: ${err.reason || err.message}`);
+    toast(err.reason || err.message, "error");
+  }
+}
+
+// ── Verify Batch ─────────────────────────────────────────────────
+async function verifyBatch() {
+  const batchId = document.getElementById("verifyBatchId").value.trim();
+  if (!batchId) return toast("Enter Batch ID", "error");
+
+  try {
+    log("TX", "tag-tx", `Verifying <b>${batchId}</b>...`);
+    const tx = await contract.connect(accounts.pharmacy).verifyBatch(batchId);
+    await tx.wait();
+    log("OK", "tag-ok", `<b>${batchId}</b> verified as AUTHENTIC`);
+    toast("Batch verified as authentic!");
+  } catch (err) {
+    log("ERR", "tag-err", `Failed: ${err.reason || err.message}`);
+    toast(err.reason || err.message, "error");
+  }
+}
+
+// ── Flag Batch ───────────────────────────────────────────────────
+async function flagBatch() {
+  const batchId = document.getElementById("flagBatchId").value.trim();
+  const reason = document.getElementById("flagReason").value.trim() || "Suspicious activity";
+  if (!batchId) return toast("Enter Batch ID", "error");
+
+  try {
+    log("TX", "tag-tx", `Flagging <b>${batchId}</b>...`);
+    const tx = await contract.connect(accounts.pharmacy).flagBatch(batchId, reason);
+    await tx.wait();
+    log("OK", "tag-ok", `<b>${batchId}</b> FLAGGED — ${reason}`);
+    toast("Batch flagged!");
+  } catch (err) {
+    log("ERR", "tag-err", `Failed: ${err.reason || err.message}`);
+    toast(err.reason || err.message, "error");
+  }
+}
+
+async function regFlagBatch() {
+  const batchId = document.getElementById("regFlagBatchId").value.trim();
+  const reason = document.getElementById("regFlagReason").value.trim() || "Compliance issue";
+  if (!batchId) return toast("Enter Batch ID", "error");
+
+  try {
+    log("TX", "tag-tx", `Regulator flagging <b>${batchId}</b>...`);
+    const tx = await contract.connect(accounts.regulator).flagBatch(batchId, reason);
+    await tx.wait();
+    log("OK", "tag-ok", `<b>${batchId}</b> FLAGGED by Regulator — ${reason}`);
+    toast("Batch flagged by regulator!");
+  } catch (err) {
+    log("ERR", "tag-err", `Failed: ${err.reason || err.message}`);
+    toast(err.reason || err.message, "error");
+  }
+}
+
+// ── Lookup Batch ─────────────────────────────────────────────────
+async function lookupBatch() {
+  const batchId = document.getElementById("lookupBatchId").value.trim();
+  if (!batchId) return toast("Enter Batch ID", "error");
+
+  try {
+    const b = await contract.getBatch(batchId);
+    document.getElementById("batchResult").innerHTML = `
+      <div class="batch-grid">
+        <div class="batch-item"><div class="lbl">Batch ID</div><div class="val">${b.batchId}</div></div>
+        <div class="batch-item"><div class="lbl">Drug Name</div><div class="val">${b.drugName}</div></div>
+        <div class="batch-item"><div class="lbl">Current Owner</div><div class="val addr">${short(b.currentOwner)}</div></div>
+        <div class="batch-item"><div class="lbl">Status</div><div class="val"><span class="status-badge status-${b.status}">${STATUS_NAMES[Number(b.status)]}</span></div></div>
+        <div class="batch-item"><div class="lbl">Mfg Date</div><div class="val">${new Date(Number(b.manufactureDate)*1000).toLocaleDateString()}</div></div>
+        <div class="batch-item"><div class="lbl">Exp Date</div><div class="val">${new Date(Number(b.expiryDate)*1000).toLocaleDateString()}</div></div>
+        <div class="batch-item full"><div class="lbl">IPFS Hash</div><div class="val" style="font-size:11px;font-family:'JetBrains Mono',monospace">${b.ipfsHash}</div></div>
+      </div>`;
+    log("INFO", "tag-info", `Batch <b>${batchId}</b>: ${b.drugName} — ${STATUS_NAMES[Number(b.status)]}`);
+  } catch (err) {
+    log("ERR", "tag-err", `Batch not found: ${err.reason || err.message}`);
+    toast("Batch not found", "error");
+  }
+}
+
+async function lookupHistory() {
+  const batchId = document.getElementById("lookupBatchId").value.trim();
+  if (!batchId) return toast("Enter Batch ID", "error");
+
+  try {
+    const history = await contract.getHistory(batchId);
+    if (history.length === 0) {
+      document.getElementById("historyResult").innerHTML = `<p style="font-size:13px;color:var(--text-dim)">No transfers yet.</p>`;
+      return;
+    }
+    let html = `<table class="history-table"><thead><tr><th>#</th><th>From</th><th>To</th><th>Time</th><th>Note</th></tr></thead><tbody>`;
+    history.forEach((h, i) => {
+      html += `<tr>
+        <td style="font-weight:600">${i+1}</td>
+        <td><span class="addr">${short(h.from)}</span></td>
+        <td><span class="addr">${short(h.to)}</span></td>
+        <td>${new Date(Number(h.timestamp)*1000).toLocaleString()}</td>
+        <td>${h.note}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    document.getElementById("historyResult").innerHTML = html;
+    log("INFO", "tag-info", `<b>${batchId}</b> history: ${history.length} transfer(s)`);
+  } catch (err) {
+    log("ERR", "tag-err", `History error: ${err.reason || err.message}`);
+    toast("Could not fetch history", "error");
+  }
+}
+
+// ── CONTRACT BYTECODE ────────────────────────────────────────────
+// This is the compiled bytecode of PharmaceuticalSupplyChain.sol
+// Generated by: npx hardhat compile → artifacts/contracts/PharmaceuticalSupplyChain.sol/PharmaceuticalSupplyChain.json → bytecode field
+// IMPORTANT: You must replace this with YOUR compiled bytecode from:
+// cat artifacts/contracts/PharmaceuticalSupplyChain.sol/PharmaceuticalSupplyChain.json | python3 -c "import sys,json; print(json.load(sys.stdin)['bytecode'])"
+const BYTECODE = "PASTE_YOUR_BYTECODE_HERE";
+
+</script>
+</body>
+</html>

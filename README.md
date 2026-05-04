@@ -1,163 +1,404 @@
-# Pharmaceutical Supply Chain Traceability System
+# 💊 Pharma Supply Chain — Blockchain + IPFS Traceability System
 
-## Overview
-
-A blockchain-based system that tracks pharmaceutical drug batches from manufacturer to consumer using Ethereum smart contracts. Each custody transfer is recorded immutably on-chain, providing a verifiable audit trail for regulatory compliance and counterfeit prevention.
-
-**Course:** CSE 540 — Engineering Blockchain Applications  
-**Team:** Team 24 | Spring B 2026
+**Course:** CSE 540 – Engineering Blockchain Applications  
+**Team:** Team 24  
+**Network:** Ethereum Sepolia Testnet  
+**Stack:** Solidity · Hardhat · React.js · ethers.js · IPFS · Pinata · MetaMask
 
 ---
 
-## Features
+## 📖 Overview
 
-- **Batch Registration** — Manufacturers register drug batches with metadata and IPFS document hashes
-- **Custody Transfer** — Track ownership changes through Manufacturer → Distributor → Pharmacy
-- **Receipt Confirmation** — Recipients confirm shipment arrival, updating batch status
-- **Authenticity Verification** — Pharmacies verify batches as authentic
-- **Flagging System** — Regulators and pharmacies can flag suspicious batches
-- **Audit Trail** — Complete chain-of-custody history for every batch
-- **Role-Based Access Control** — Five distinct roles with enforced permissions
+A decentralized pharmaceutical supply chain traceability system that combines **Ethereum smart contracts** with **IPFS off-chain storage**. Drug batch metadata, lab reports, certificates of analysis, and transfer documents are stored on IPFS — only the content identifier (CID) is anchored immutably on-chain.
 
----
+```
+Manufacturer registers batch
+        ↓ metadata uploaded to IPFS → CID returned
+        ↓ CID stored permanently on Ethereum blockchain
 
-## Tech Stack
+Distributor receives batch
+        ↓ transfer document uploaded to IPFS → CID returned
+        ↓ ownership change + CID recorded on blockchain
 
-| Component         | Technology                        |
-|-------------------|-----------------------------------|
-| Smart Contract    | Solidity ^0.8.20                  |
-| Framework         | Hardhat                           |
-| Testing           | Chai + Hardhat Toolbox            |
-| Network           | Ethereum (Sepolia Testnet)        |
-| Frontend          | HTML/CSS/JS (demo), React (planned) |
-| Off-chain Storage | IPFS                              |
-| Wallet            | MetaMask                          |
+Pharmacy / Regulator verifies
+        ↓ verification recorded on blockchain
+
+Anyone can audit
+        ↓ read blockchain → resolve all CIDs from IPFS
+        ↓ full tamper-proof audit trail displayed
+```
 
 ---
 
-## Repository Structure
+## 🚨 Problem Statement
+
+Pharmaceutical supply chains suffer from:
+- Counterfeit drugs entering the supply chain
+- Tampering and diversion of legitimate products
+- Fragmented, non-interoperable record systems
+- No trusted, verifiable audit trail across stakeholders
+
+This system provides a secure, verifiable way to track drug batches from manufacturer to patient.
+
+---
+
+## ✨ Features
+
+- ✅ Register drug batches with IPFS metadata storage
+- ✅ Transfer ownership across stakeholders (Manufacturer → Distributor → Pharmacy)
+- ✅ Attach supporting documents (COAs, lab reports, shipping manifests) to IPFS
+- ✅ Verify batch authenticity at pharmacy/regulator level
+- ✅ Immutable audit trail with IPFS document links at every step
+- ✅ Role-based access control (Manufacturer, Distributor, Pharmacy, Regulator, Consumer)
+- ✅ Multi-gateway IPFS fallback for reliable document retrieval
+- ✅ Batch viewer fetches both on-chain data and IPFS metadata simultaneously
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────┐      ┌──────────────────────────────┐
+│       React Frontend        │      │    Ethereum / Sepolia         │
+│                             │      │                              │
+│  RegisterBatch.jsx    ──────────▶  │  registerBatch(             │
+│  TransferOwnership.jsx      │      │    batchId,                 │
+│  BatchViewer.jsx      ◀──────────  │    metadataCID  ◀───┐       │
+└──────────┬──────────────────┘      └─────────────────────┘       │
+           │                                                         │
+           │  uploadMetadata() / uploadFile()                        │
+           ▼                                                         │
+┌──────────────────────┐                                             │
+│    IPFS / Pinata     │──── returns CID ───────────────────────────┘
+│                      │
+│  Batch Metadata JSON │
+│  COA / Lab Reports   │
+│  Shipping Manifests  │
+│  Recall Notices      │
+└──────────────────────┘
+```
+
+---
+
+## 📁 Repository Structure
 
 ```
 pharma-supply-chain/
 ├── contracts/
-│   └── PharmaceuticalSupplyChain.sol    # Main smart contract
+│   └── PharmaceuticalSupplyChain.sol   # Smart contract with IPFS CID storage
 ├── scripts/
-│   ├── deploy.js                        # Deployment script
-│   └── demo.js                          # Full end-to-end demo script
+│   └── deploy.js                       # Deploy + auto-write ABI to frontend
 ├── test/
-│   └── PharmaceuticalSupplyChain.test.js  # Unit tests (25+ test cases)
+│   └── PharmaceuticalSupplyChain.test.js  # Full test suite
 ├── frontend/
-│   └── demo.html                        # Interactive demo page
+│   └── src/
+│       ├── components/
+│       │   ├── RegisterBatch.jsx        # Batch registration + IPFS upload
+│       │   ├── TransferOwnership.jsx    # Ownership transfer + IPFS doc upload
+│       │   └── BatchViewer.jsx         # Read chain + resolve IPFS metadata
+│       ├── hooks/
+│       │   └── useIPFS.js              # React hook for IPFS operations
+│       ├── utils/
+│       │   └── ipfsService.js          # Pinata + local Kubo IPFS service
+│       └── abi/
+│           └── PharmaceuticalSupplyChain.json  # Auto-generated by deploy.js
 ├── hardhat.config.js
 ├── package.json
+├── .env.example                        # Template — copy to .env and fill in
 └── README.md
 ```
 
 ---
 
-## Setup Instructions
+## 🔧 Smart Contract
+
+### Roles
+
+| Role | Value | Permissions |
+|---|---|---|
+| None | 0 | No permissions |
+| Manufacturer | 1 | Register batches, attach documents |
+| Distributor | 2 | Receive/transfer batches, attach documents |
+| Pharmacy | 3 | Verify batches, attach documents |
+| Regulator | 4 | Verify batches, assign roles, attach documents |
+| Consumer | 5 | Read only |
+
+### Key Functions
+
+| Function | Who Can Call | Description |
+|---|---|---|
+| `assignRole(address, role)` | Admin only | Grant a role to a wallet |
+| `registerBatch(batchId, drugName, mfgDate, expDate, metadataCID)` | Manufacturer | Register batch with IPFS CID |
+| `transferOwnership(batchId, newOwner, transferDocCID)` | Current owner | Transfer to next stakeholder |
+| `verifyBatch(batchId)` | Pharmacy, Regulator | Mark batch as verified |
+| `attachDocument(batchId, ipfsCID, docType)` | Any valid role | Attach additional IPFS document |
+| `getBatch(batchId)` | Anyone | Read batch summary + metadata CID |
+| `getHistory(batchId)` | Anyone | Full audit trail with CIDs |
+| `getDocument(batchId, index)` | Anyone | Get attached document by index |
+
+### IPFS Storage Pattern
+
+Every batch stores a primary `metadataCID` at registration. Additional documents (recall notices, temperature logs, certificates) can be attached at any time via `attachDocument()`. Every transfer also optionally stores a `transferDocCID` in the history entry.
+
+---
+
+## 🚀 Setup & Installation
 
 ### Prerequisites
 
-- Node.js v18+
-- npm
+- [Node.js](https://nodejs.org) v18 or higher
+- [MetaMask](https://metamask.io) browser extension
+- [Alchemy](https://alchemy.com) account (free) — for Sepolia RPC
+- [Pinata](https://app.pinata.cloud) account (free) — for IPFS pinning
 
-### Install Dependencies
+---
+
+### 1. Clone the repository
 
 ```bash
+git clone https://github.com/yourusername/pharma-supply-chain.git
 cd pharma-supply-chain
+```
+
+### 2. Install dependencies
+
+```bash
+# Install Hardhat dependencies
+npm install
+
+# Install frontend dependencies
+cd frontend
 npm install
 ```
 
-### Compile the Contract
+### 3. Configure environment variables
+
+```bash
+# Copy the example file
+cp .env.example .env
+```
+
+Open `.env` and fill in your values:
+
+```env
+# Your MetaMask wallet private key (deployer)
+PRIVATE_KEY=your_private_key_here
+
+# Alchemy Sepolia RPC URL
+SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your_key_here
+```
+
+Copy the frontend example:
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Open `frontend/.env` and fill in:
+
+```env
+REACT_APP_CONTRACT_ADDRESS=    # filled after deploy
+REACT_APP_RPC_URL=https://rpc.sepolia.org
+REACT_APP_PINATA_API_KEY=your_pinata_api_key
+REACT_APP_PINATA_SECRET_KEY=your_pinata_secret_key
+REACT_APP_IPFS_GATEWAY=https://gateway.pinata.cloud/ipfs/
+```
+
+> **Getting your Pinata keys:** Sign up at [app.pinata.cloud](https://app.pinata.cloud) → Avatar → API Keys → New Key → Admin → copy both values.
+
+> **Getting your Alchemy URL:** Sign up at [alchemy.com](https://alchemy.com) → Create App → Ethereum → Sepolia → API Key → copy the HTTPS URL.
+
+---
+
+### 4. Get free Sepolia test ETH
+
+You need test ETH to pay for deployment. Get it free from one of these faucets:
+
+- [sepoliafaucet.com](https://sepoliafaucet.com) — requires Alchemy account
+- [Google Web3 Faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia) — no account needed
+
+Paste your MetaMask wallet address and request ETH. Wait 1–2 minutes for it to arrive.
+
+---
+
+### 5. Compile the contracts
 
 ```bash
 npx hardhat compile
 ```
 
-### Run Tests
+Expected output: `Compiled 1 Solidity file successfully`
+
+---
+
+### 6. Run tests
 
 ```bash
 npx hardhat test
 ```
 
-### Run the Full Demo
-
-```bash
-npx hardhat run scripts/demo.js
-```
-
-This runs an end-to-end simulation:
-1. Deploys the contract
-2. Assigns roles to 5 wallets
-3. Registers a drug batch
-4. Transfers custody: Manufacturer → Distributor → Pharmacy
-5. Pharmacy verifies the batch
-6. Queries the full audit trail
-7. Regulator flags a second batch
-
-### Interactive Frontend Demo
-
-Open `frontend/demo.html` in any browser — no setup needed. Click through each step to see the supply chain flow visualized in real time.
+All tests should pass with green checkmarks ✓.
 
 ---
 
-## Smart Contract Overview
+### 7. Deploy to Sepolia
 
-### Roles
-
-| Role          | Permissions                          |
-|---------------|--------------------------------------|
-| Admin         | Assign roles to addresses            |
-| Manufacturer  | Register new drug batches            |
-| Distributor   | Receive and forward batches          |
-| Pharmacy      | Receive, verify, and flag batches    |
-| Regulator     | Audit and flag batches               |
-| Consumer      | View batch provenance (read-only)    |
-
-### Key Functions
-
-| Function              | Access          | Description                              |
-|-----------------------|-----------------|------------------------------------------|
-| `assignRole()`        | Admin           | Assign a supply chain role               |
-| `registerBatch()`     | Manufacturer    | Register a new drug batch on-chain       |
-| `transferOwnership()` | Current Owner   | Transfer custody to next stakeholder     |
-| `receiveShipment()`   | Current Owner   | Confirm receipt of a batch               |
-| `verifyBatch()`       | Pharmacy        | Mark batch as verified/authentic         |
-| `flagBatch()`         | Pharmacy/Regulator | Flag a suspicious batch              |
-| `getBatch()`          | Anyone          | View batch details                       |
-| `getHistory()`        | Anyone          | View full transfer history               |
-
-### Events
-
-- `BatchRegistered` — New batch created
-- `OwnershipTransferred` — Custody changed
-- `BatchReceived` — Shipment receipt confirmed
-- `BatchVerified` — Batch verified as authentic
-- `BatchFlagged` — Batch flagged as suspicious
-- `RoleAssigned` — Role assigned to an address
-
----
-
-## Deployment
-
-### Local (Hardhat Network)
-
-```bash
-npx hardhat run scripts/deploy.js
-```
-
-### Sepolia Testnet
-
-1. Add your Infura/Alchemy key and wallet private key to `hardhat.config.js`
-2. Run:
 ```bash
 npx hardhat run scripts/deploy.js --network sepolia
 ```
 
+After 30–60 seconds you will see:
+
+```
+✅ PharmaceuticalSupplyChain deployed to: 0xYourContractAddress
+📁 ABI written to frontend/src/abi/
+📝 Contract address saved to frontend/.env
+```
+
+The deploy script automatically:
+- Writes the ABI to `frontend/src/abi/`
+- Updates `REACT_APP_CONTRACT_ADDRESS` in `frontend/.env`
+
 ---
 
-## Team Members
+### 8. Assign yourself the Manufacturer role
+
+The deployer wallet is automatically the admin. Assign yourself a role to start registering batches:
+
+```bash
+node -e "
+const { ethers } = require('ethers');
+const abi = require('./artifacts/contracts/PharmaceuticalSupplyChain.sol/PharmaceuticalSupplyChain.json').abi;
+async function main() {
+  const provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
+  const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  const contract = new ethers.Contract('YOUR_CONTRACT_ADDRESS', abi, signer);
+  const tx = await contract.assignRole('YOUR_WALLET_ADDRESS', 1); // 1 = Manufacturer
+  await tx.wait();
+  console.log('Manufacturer role assigned!');
+}
+main();
+"
+```
+
+To assign a Distributor role to another wallet:
+```bash
+# Change the second argument: 1=Manufacturer, 2=Distributor, 3=Pharmacy, 4=Regulator
+await contract.assignRole('0xRecipientAddress', 2);
+```
+
+---
+
+### 9. Start the frontend
+
+```bash
+cd frontend
+npm start
+```
+
+Browser opens automatically at `http://localhost:3000`.
+
+---
+
+## 📱 Usage
+
+### Register a Drug Batch
+
+1. Open the app and click **Register Batch**
+2. Connect MetaMask when prompted — make sure you're on **Sepolia** network
+3. Fill in the batch details:
+   - Batch ID (e.g. `BATCH-2025-001`)
+   - Drug name, manufacture date, expiry date
+   - Composition, storage conditions, certification number
+   - Optionally attach a PDF or image (COA, lab report)
+4. Click **Register Batch**
+5. MetaMask prompts for confirmation — click **Confirm**
+6. The app will show:
+   - IPFS CID of your metadata (clickable link to view raw JSON)
+   - Transaction hash once confirmed on blockchain
+
+### Transfer Ownership
+
+1. Click **Transfer Ownership**
+2. Enter the batch ID and recipient wallet address
+3. The recipient must have a valid role assigned (Distributor, Pharmacy, or Regulator)
+4. Optionally fill in quantity, temperature, and notes — these are uploaded as a JSON document to IPFS
+5. Confirm in MetaMask
+
+### View a Batch
+
+1. Click **View Batch**
+2. Enter any batch ID and click **Lookup**
+3. The viewer displays:
+   - **Batch Summary** — drug name, dates, current owner, verified status
+   - **IPFS Metadata** — composition, storage conditions, certification details (fetched live from IPFS)
+   - **Audit Trail** — every action (REGISTERED, TRANSFERRED, VERIFIED) with wallet addresses, timestamps, and links to IPFS documents
+
+---
+
+## 🧪 Testing
+
+```bash
+npx hardhat test
+```
+
+The test suite covers:
+
+- Batch registration with IPFS CID storage
+- CID stored correctly in history
+- Rejection of registration without a CID
+- Ownership transfer with transfer document CID
+- Multiple document attachment
+- Role-based access control (Consumer cannot attach documents, etc.)
+- Full lifecycle journey from manufacture to pharmacy verification
+
+---
+
+## 🔒 Security Considerations
+
+- **CIDs are content-addressed** — any document tampering changes the CID, making forgery instantly detectable on-chain
+- **Role-based permissions** enforce who can register, transfer, and verify
+- **Immutable history** — once written to the blockchain, audit trail entries cannot be altered or deleted
+- **Minimal on-chain data** — only CIDs are stored on-chain; sensitive documents can be encrypted before uploading to IPFS
+- **Never commit `.env` files** — all secrets are kept in local environment files excluded by `.gitignore`
+
+> ⚠️ For production use, encrypt sensitive documents (patient data, proprietary formulations) before uploading to IPFS, since IPFS content is publicly accessible by CID.
+
+---
+
+## 🌐 IPFS Service Details
+
+The `ipfsService.js` utility automatically selects the best available IPFS provider:
+
+| Condition | Provider Used |
+|---|---|
+| Pinata API keys present in `.env` | **Pinata** (cloud pinning, CIDv1, recommended) |
+| No Pinata keys | **Local Kubo node** at `localhost:5001` (development only) |
+
+For fetching, multiple public gateways are tried in sequence for resilience:
+1. Your configured gateway (Pinata)
+2. Cloudflare IPFS
+3. dweb.link
+4. ipfs.io
+
+---
+
+## ❗ Common Issues & Fixes
+
+| Error | Cause | Fix |
+|---|---|---|
+| `Network sepolia doesn't exist` | `.env` not loading or missing | Ensure `.env` is in project root with no quotes around values |
+| `insufficient funds for gas` | Wallet has 0 Sepolia ETH | Get test ETH from a faucet |
+| `private key too short` | Copied wallet address not private key | Export private key from MetaMask → Account Details → Show private key |
+| `Only admin can call this` | Wrong wallet calling assignRole | Use the deployer wallet's private key |
+| `Recipient has invalid role` | Transfer recipient has no role | Run assignRole for the recipient first |
+| `BAD_DATA` in Batch Viewer | ABI mismatch with deployed contract | Re-run deploy.js and recopy ABI |
+| MetaMask shows Ethereum Mainnet | Wrong network selected | Switch MetaMask to Sepolia testnet |
+| `IPFS upload failed` | Wrong Pinata keys | Double-check keys in frontend `.env` |
+
+---
+
+## 👥 Team Members
 
 - Anannya Reddy Gade
 - Sriveda Chintapalli
@@ -167,6 +408,17 @@ npx hardhat run scripts/deploy.js --network sepolia
 
 ---
 
-## License
+## 📄 License
 
-Academic project — CSE 540, Arizona State University
+Academic project for CSE 540 – Engineering Blockchain Applications.
+
+---
+
+## 🔗 Useful Links
+
+- [Sepolia Etherscan](https://sepolia.etherscan.io) — view transactions and contracts
+- [Pinata](https://app.pinata.cloud) — manage IPFS pins
+- [Alchemy](https://alchemy.com) — RPC provider dashboard
+- [Hardhat Docs](https://hardhat.org/docs) — smart contract development
+- [ethers.js Docs](https://docs.ethers.org) — Ethereum library reference
+- [IPFS Docs](https://docs.ipfs.tech) — decentralized storage reference
