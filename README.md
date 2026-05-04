@@ -1,4 +1,4 @@
-# 💊 Pharma Supply Chain — Blockchain + IPFS Traceability System
+# Pharma Supply Chain — Blockchain + IPFS Traceability System
 
 **Course:** CSE 540 – Engineering Blockchain Applications  
 **Team:** Team 24  
@@ -7,7 +7,7 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 A decentralized pharmaceutical supply chain traceability system that combines **Ethereum smart contracts** with **IPFS off-chain storage**. Drug batch metadata, lab reports, certificates of analysis, and transfer documents are stored on IPFS — only the content identifier (CID) is anchored immutably on-chain.
 
@@ -30,7 +30,7 @@ Anyone can audit
 
 ---
 
-## 🚨 Problem Statement
+## Problem Statement
 
 Pharmaceutical supply chains suffer from:
 - Counterfeit drugs entering the supply chain
@@ -42,7 +42,7 @@ This system provides a secure, verifiable way to track drug batches from manufac
 
 ---
 
-## ✨ Features
+## Features
 
 - ✅ Register drug batches with IPFS metadata storage
 - ✅ Transfer ownership across stakeholders (Manufacturer → Distributor → Pharmacy)
@@ -55,7 +55,7 @@ This system provides a secure, verifiable way to track drug batches from manufac
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────┐      ┌──────────────────────────────┐
@@ -80,7 +80,7 @@ This system provides a secure, verifiable way to track drug batches from manufac
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 pharma-supply-chain/
@@ -110,7 +110,7 @@ pharma-supply-chain/
 
 ---
 
-## 🔧 Smart Contract
+## Smart Contract
 
 ### Roles
 
@@ -142,7 +142,7 @@ Every batch stores a primary `metadataCID` at registration. Additional documents
 
 ---
 
-## 🚀 Setup & Installation
+## Setup & Installation
 
 ### Prerequisites
 
@@ -250,9 +250,9 @@ npx hardhat run scripts/deploy.js --network sepolia
 After 30–60 seconds you will see:
 
 ```
-✅ PharmaceuticalSupplyChain deployed to: 0xYourContractAddress
-📁 ABI written to frontend/src/abi/
-📝 Contract address saved to frontend/.env
+PharmaceuticalSupplyChain deployed to: 0xYourContractAddress
+ABI written to frontend/src/abi/
+Contract address saved to frontend/.env
 ```
 
 The deploy script automatically:
@@ -300,7 +300,7 @@ Browser opens automatically at `http://localhost:3000`.
 
 ---
 
-## 📱 Usage
+## Usage
 
 ### Register a Drug Batch
 
@@ -336,7 +336,7 @@ Browser opens automatically at `http://localhost:3000`.
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ```bash
 npx hardhat test
@@ -354,7 +354,7 @@ The test suite covers:
 
 ---
 
-## 🔒 Security Considerations
+## Security Considerations
 
 - **CIDs are content-addressed** — any document tampering changes the CID, making forgery instantly detectable on-chain
 - **Role-based permissions** enforce who can register, transfer, and verify
@@ -362,11 +362,11 @@ The test suite covers:
 - **Minimal on-chain data** — only CIDs are stored on-chain; sensitive documents can be encrypted before uploading to IPFS
 - **Never commit `.env` files** — all secrets are kept in local environment files excluded by `.gitignore`
 
-> ⚠️ For production use, encrypt sensitive documents (patient data, proprietary formulations) before uploading to IPFS, since IPFS content is publicly accessible by CID.
+> For production use, encrypt sensitive documents (patient data, proprietary formulations) before uploading to IPFS, since IPFS content is publicly accessible by CID.
 
 ---
 
-## 🌐 IPFS Service Details
+## IPFS Service Details
 
 The `ipfsService.js` utility automatically selects the best available IPFS provider:
 
@@ -383,7 +383,7 @@ For fetching, multiple public gateways are tried in sequence for resilience:
 
 ---
 
-## ❗ Common Issues & Fixes
+## Common Issues & Fixes
 
 | Error | Cause | Fix |
 |---|---|---|
@@ -398,7 +398,7 @@ For fetching, multiple public gateways are tried in sequence for resilience:
 
 ---
 
-## 👥 Team Members
+## Team Members
 
 - Anannya Reddy Gade
 - Sriveda Chintapalli
@@ -408,13 +408,13 @@ For fetching, multiple public gateways are tried in sequence for resilience:
 
 ---
 
-## 📄 License
+## License
 
 Academic project for CSE 540 – Engineering Blockchain Applications.
 
 ---
 
-## 🔗 Useful Links
+## Useful Links
 
 - [Sepolia Etherscan](https://sepolia.etherscan.io) — view transactions and contracts
 - [Pinata](https://app.pinata.cloud) — manage IPFS pins
